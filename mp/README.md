@@ -6,7 +6,7 @@ Up to 16 players per room, one Render web service. The service serves the game p
 - The player who creates a room is the **host**. Their browser runs the whole simulation (bots, zombies, bullets).
 - Everyone else sends inputs to the host and receives filtered snapshots, about 15 per second, through the relay.
 - Empty slots are filled with bots. If a player disconnects, a bot takes over their fighter.
-- If the host leaves, the room closes (no host migration).
+- If the host leaves, the next player becomes host. In the lobby nothing else changes; during a match the match ends and everyone returns to the lobby (the simulation lives in the old host's browser and can't be resumed).
 
 ## Deploy on Render (about 5 minutes)
 1. Put this folder in a GitHub repo (or upload it as a zip to a new repo).

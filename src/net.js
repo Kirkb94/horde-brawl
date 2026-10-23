@@ -194,6 +194,16 @@ function netMsgInner(m){
     case'r':netRecv(m.from,m.d);break;
   }
 }
+const NET_ACTS=Object.assign(Object.create(null),{d:0,h:0,a:2,e:2,x:2,z:0,u:0,m:2,r:0});
+const netVNum=(v,lo,hi)=>typeof v==='number'&&isFinite(v)?Math.max(lo,Math.min(hi,v)):0;
+function netVActs(arr){const out=[];if(!Array.isArray(arr))return out;
+  for(const a of arr.slice(0,6)){if(!Array.isArray(a)||typeof a[0]!=='string'||!(a[0] in NET_ACTS))continue;
+    const k=a[0],n=NET_ACTS[k];
+    if(k==='h'){out.push(['h',a[1]===1?1:2]);continue}
+    if(k==='d'){out.push(['d',netVNum(a[1],-1,1),netVNum(a[2],-1,1)]);continue}
+    if(n===2&&(k==='m'||a.length>2)){if(typeof a[1]!=='number'||typeof a[2]!=='number'||!isFinite(a[1])||!isFinite(a[2]))continue;out.push([k,netVNum(a[1],-1e5,1e5),netVNum(a[2],-1e5,1e5)]);continue}
+    out.push([k])}
+  return out}
 function netRecv(from,d){
   try{
     if(!d||typeof d!=='object')return;
@@ -204,10 +214,10 @@ function netRecvInner(from,d){
   if(!d)return;
   if(NET.m==='host'){
     if(d.k==='i'){const c=NET.cl[from];if(!c)return;let I=NET.inp[from];if(!I)I=NET.inp[from]={acts:[]};
-      I.mx=clamp(+d.mx||0,-1,1);I.my=clamp(+d.my||0,-1,1);I.f=+d.f||0;I.fr=d.fr?1:0;if(Array.isArray(d.a)&&I.acts.length<12)for(const a of d.a.slice(0,6))I.acts.push(a);
-      if(typeof d.sv==='number')c.sv=d.sv;if(typeof d.q==='number')c.ak=d.q}
+      I.mx=netVNum(d.mx,-1,1);I.my=netVNum(d.my,-1,1);I.f=netVNum(d.f,-1e4,1e4);I.fr=d.fr?1:0;if(I.acts.length<12)for(const a of netVActs(d.a))I.acts.push(a);
+      if(Number.isInteger(d.sv)&&d.sv>=-1&&d.sv<N_FIGHT)c.sv=d.sv;if(typeof d.q==='number'&&isFinite(d.q))c.ak=d.q}
     else if(d.k==='ready'){const c=NET.cl[from];if(!c||G.mode!=='between'||NET.ready[from])return;
-      if(Array.isArray(d.picks))for(const p of d.picks.slice(0,8))if(Array.isArray(p)&&UP[p[0]])applyUpgrade(c.f,p[0],1);
+      if(Array.isArray(d.picks)){const lim=Math.min(8,Math.max(0,(c.f.pend||0)+1));for(const p of d.picks.slice(0,lim))if(Array.isArray(p)&&typeof p[0]==='string'&&Object.prototype.hasOwnProperty.call(UP,p[0]))applyUpgrade(c.f,p[0],1)}
       c.f.pend=0;NET.ready[from]=true;netHostCheckNext()}
     else if(d.k==='rs'){const c=NET.cl[from];if(c)c.needFull=true}
     return;

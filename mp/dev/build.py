@@ -3,7 +3,8 @@ src=open('../storm-duel-horde.html').read()
 def rep(old,new,cnt=1):
     global src
     n=src.count(old)
-    assert n==cnt,(n,old[:80])
+    if n!=cnt:
+        sys.exit('BUILD FAILED: marker expected %d time(s) but found %d in ../storm-duel-horde.html. Networking code would be skipped or misplaced. Marker: %r'%(cnt,n,old[:100]))
     src=src.replace(old,new)
 rep("function near(x,y){return Math.abs(x-G.cam.x)<720","function near(x,y){if(NET.m==='host')return netNear(x,y);return Math.abs(x-G.cam.x)<720")
 rep("function controlPlayer(dt){\n  const p=G.P;let mx=0,my=0;","function controlPlayer(dt){\n  const p=G.P;let mx=0,my=0;\n  if(NET.m==='host'&&!ov.hidden){p.mv={x:0,y:0};p.wantFire=false;dashQueued=false;abQueued=false;healQueued=null;return}")
@@ -36,8 +37,12 @@ css=""".nin{width:100%;box-sizing:border-box;background:var(--void);color:var(--
 </style>"""
 i=src.index("</style>");src=src[:i]+css+src[i+8:]
 net=open('dev/net.js').read()
+if len(net.strip())<100 or 'function netMenu' not in net:
+    sys.exit('BUILD FAILED: dev/net.js is empty or does not define netMenu; refusing to build without networking code.')
 mark="pfInit();resize();menu();requestAnimationFrame(frame);"
 rep(mark,net+"\n"+mark)
+if 'function netMenu' not in src or src.count(net)!=1:
+    sys.exit('BUILD FAILED: net.js was not injected into the built page exactly once.')
 rep("<title>","<title>Online · ") if False else None
 import os
 if os.environ.get('TEST'):
