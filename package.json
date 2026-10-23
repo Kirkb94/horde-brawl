@@ -1,0 +1,16 @@
+{
+  "name": "horde-brawl-online",
+  "version": "1.0.0",
+  "description": "Horde Brawl: BAPBAP-style hero brawler built on Horde Duel (up to 16 players per room)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
