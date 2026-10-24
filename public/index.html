@@ -4295,8 +4295,8 @@ function routeGoal(a,dt){
 function zombieSense(a){
   const st=G.st;let zc=0,nd=1e9,near=null,ax=0,ay=0,hunter=false,secs=0;
   for(let _i12=0,_a12=G.fighters;_i12<_a12.length;_i12++){const z=_a12[_i12];
-    if(!z.zomb||!z.alive||z.struct||isAlly(a,z))continue;
-    const dx=a.x-z.x,dy=a.y-z.y,d=Math.hypot(dx,dy);
+    if(!z.zomb||!z.alive||z.struct)continue;
+    const dx=a.x-z.x,dy=a.y-z.y;if(dx>450||dx<-450||dy>450||dy<-450)continue;if(isAlly(a,z))continue;const d=Math.hypot(dx,dy);
     if(d>340)continue;
     if(Math.hypot(z.x-st.cx,z.y-st.cy)>st.r+10&&d>120)continue;
     if((z.zk==='hunter'||z.zk==='sprinter')&&d<450)hunter=true;
@@ -5077,9 +5077,14 @@ function noise(x,y,r){
 }
 function hearNoise(z){
   const L=G.noises;if(!L||!L.length)return null;let best=null,bs=1e9;
-  for(let _i11=0,_a11=L;_i11<_a11.length;_i11++){const n=_a11[_i11];const age=G.time-n.t;if(age>7||age<0)continue;const d=Math.hypot(n.x-z.x,n.y-z.y),rr=n.r*(z.zk==='hunter'||z.zk==='sprinter'?1.3:1);if(d>rr)continue;const sc=d/rr+age*.05;if(sc<bs){bs=sc;best=n}}
+  for(let _i11=0,_a11=L;_i11<_a11.length;_i11++){const n=_a11[_i11];const age=G.time-n.t;if(age>7||age<0)continue;const nlim=n.r*1.3;if(Math.abs(n.x-z.x)>nlim||Math.abs(n.y-z.y)>nlim)continue;const d=Math.hypot(n.x-z.x,n.y-z.y),rr=n.r*(z.zk==='hunter'||z.zk==='sprinter'?1.3:1);if(d>rr)continue;const sc=d/rr+age*.05;if(sc<bs){bs=sc;best=n}}
   return best;
 }
+// Server CPU saver: a zombie with no fighter within 650px only needs to think every other tick (with twice the dt).
+// Hunters, the Tyrant, necro minions and siege zombies always think every tick.
+// Alive non-zombie fighters, rebuilt once per tick: zombies scan this short list instead of every entity on the map.
+function humList(fs){const o=[];for(let i=0;i<fs.length;i++){const f=fs[i];if(f.alive&&!f.zomb)o.push(f)}return o}
+function srvZFar(z,L){if(z.zk==='hunter'||z.tyrant||z.elite||z.master||z.siege||z.latch||z.forceT>0)return false;for(let i=0;i<L.length;i++){const f=L[i];if(Math.abs(f.x-z.x)<650&&Math.abs(f.y-z.y)<650)return false}return true}
 function controlHorde(z,dt){
   if(z.emT>0){z.mv={x:0,y:0};return}
   if(z.master)return necAI(z,dt);
@@ -5097,7 +5102,7 @@ function controlHorde(z,dt){
   const fs=G.fighters,st=G.st,hunt=z.zk==='hunter'||!!z.elite||!!z.tyrant,SR=hunt?1000:z.zk==='sprinter'?420:ZX[z.zk]?ZX[z.zk].sight:330;let tg=null,td=1e12,tgSeen=false;
   if(z.kt>0)z.kt-=dt;
   // poor eyesight: only a narrow band straight ahead (and anything almost touching) is noticed; sound does the rest
-  for(let _i6=0,_a6=fs;_i6<_a6.length;_i6++){const f=_a6[_i6];if(f.zomb||!f.alive||f.jumpT>0)continue;const dx=f.x-z.x,dy=f.y-z.y,dd=dx*dx+dy*dy;if(f.cloakT>0&&dd>46*46)continue;
+  for(let _i6=0,_a6=G.hum||fs;_i6<_a6.length;_i6++){const f=_a6[_i6];if(f.zomb||!f.alive||f.jumpT>0)continue;const dx=f.x-z.x,dy=f.y-z.y,dd=dx*dx+dy*dy;if(f.cloakT>0&&dd>46*46)continue;
     let seen=hunt?dd<SR*SR:dd<54*54;
     if(!seen&&!hunt&&dd<SR*SR&&Math.abs(angDiff(z.facing,Math.atan2(dy,dx)))<rad(22)&&losClear(z.x,z.y,f.x,f.y))seen=true;
     const kept=!seen&&z.kt>0&&z.kid===f.id&&dd<(SR*1.25)*(SR*1.25);
@@ -5106,7 +5111,7 @@ function controlHorde(z,dt){
   if(z.forceT>0){z.forceT-=dt;for(const f of fs)if(f.id===z.forceId&&f.alive&&!f.zomb){tg=f;td=(f.x-z.x)**2+(f.y-z.y)**2;tgSeen=true;break}}
   if(ZX[z.zk]&&zxBR(z,dt,tg,td)==='done')return;
   let px=tg?tg.x:st.cx+z.ox,py=tg?tg.y:st.cy+z.oy;
-  if(!tg){const hn=hearNoise(z);if(hn&&Math.hypot(hn.x-z.x,hn.y-z.y)>70){px=hn.x+(z.ox||0)*.3;py=hn.y+(z.oy||0)*.3;z.heard=G.time}}
+  if(!tg){if(!((z.hnT-=dt)>0)){z.hnT=.18+Math.random()*.1;z.hn=hearNoise(z)}const hn=z.hn;if(hn&&Math.hypot(hn.x-z.x,hn.y-z.y)>70){px=hn.x+(z.ox||0)*.3;py=hn.y+(z.oy||0)*.3;z.heard=G.time}}
   if(!tg&&z.mom&&z.mom.alive){px=z.mom.x+(z.ox||0)*.35;py=z.mom.y+(z.oy||0)*.35}
   let dx=px-z.x,dy=py-z.y;const d=Math.hypot(dx,dy)||1;
   // walk straight when the way is clear, otherwise follow the flow field around the walls
@@ -5411,9 +5416,12 @@ function update0(dt){
   if(G.mode==='ending'){G.endT-=dt;for(let _i1=0,_a1=G.bullets;_i1<_a1.length;_i1++){const b=_a1[_i1];b.x+=b.vx*dt*.3;b.y+=b.vy*dt*.3}if(G.endT<=0)dropResults();return}
   if(G.mode!=='play')return;
   const P=G.P,fs=G.fighters;G.time+=dt;G.st=storm(G.time);const st=G.st;
+  G.hum=humList(fs);const zHalf=NET.srv?G.hum:null;G.zTick=(G.zTick||0)+1;
   for(let _i2=0,_a2=fs;_i2<_a2.length;_i2++){const f=_a2[_i2];
     if(!f.alive)continue;
-    if(f.remote)controlRemote(f,dt);else if(f===P&&!G.debug&&!NET.srv)controlPlayer(dt);else if(f.zomb)controlHorde(f,dt);else controlAI(f,dt);
+    if(f.remote)controlRemote(f,dt);else if(f===P&&!G.debug&&!NET.srv)controlPlayer(dt);
+    else if(f.zomb){if(zHalf&&srvZFar(f,zHalf)){if(((G.zTick+_i2)&1)===0)controlHorde(f,dt*2)}else controlHorde(f,dt)}
+    else controlAI(f,dt);
     stepFighter(f,dt);
   }
   stepDeploys(dt);
@@ -5510,7 +5518,8 @@ function update0(dt){
   padStep(dt);
   for(let i=G.orbs.length-1;i>=0;i--){const o=G.orbs[i];o.t+=dt;
     for(let _i4=0,_a4=fs;_i4<_a4.length;_i4++){const f=_a4[_i4];if(!f.alive||f.zomb)continue;
-      if(Math.hypot(f.x-o.x,f.y-o.y)<f.r+14){
+      const odx=f.x-o.x,ody=f.y-o.y,orr=f.r+14;if(odx>orr||odx<-orr||ody>orr||ody<-orr)continue;
+      if(odx*odx+ody*ody<orr*orr){
         if(o.item==='armor'){if(f.armor>0)continue;f.armor=50;if(f===G.P)VOICE.loot();padFree(o);SFX.pickup('armor',o.x,o.y);if(near(o.x,o.y))burst(o.x,o.y,'#8fb8d8',12,200);o.gone=true;G.orbs.splice(i,1);break}
         if(o.item){if(f[o.item]>=HEAL[o.item].cap){if(f===G.P&&(o.item==='band'||o.item==='kit')&&(f.fullO!==o||G.t-(f.fullT||0)>4||G.t-(f.fullSeen||0)>.3)){f.fullO=o;f.fullT=G.t;f.fullSeen=G.t;G.fx.push({kind:'num',txt:o.item==='band'?'Bandages full':'Med Kit full',x:f.x,y:f.y-34,age:0,col:'#ffd27a'})}continue}f[o.item]++;if(f===G.P)VOICE.loot();if(f===G.P&&(o.item==='band'||o.item==='kit')){try{if(!localStorage.getItem('hordeheal')){localStorage.setItem('hordeheal','1');feedAdd('Walk over green kits to auto-collect them',false)}}catch(e){}}padFree(o);SFX.pickup('item',o.x,o.y);if(near(o.x,o.y))burst(o.x,o.y,'#6be38a',8,160);o.gone=true;G.orbs.splice(i,1);break}
         SFX.pickup('orb',o.x,o.y);gainXP(f,25);f.hp=Math.min(mhp(f),f.hp+8);if(near(o.x,o.y))burst(o.x,o.y,COL.orb,10,180);o.gone=true;G.orbs.splice(i,1);break}}}
@@ -7443,8 +7452,16 @@ function netApplyDrop(d){
   fs.forEach((f,i)=>{f.ups=d.ups[i]||{};computeStats(f);Object.assign(f,{alive:true,hp:mhp(f),place:0,dropKills:0,ammo:f.st.clip,reloadT:0,dashT:0,jumpT:0,healT:0,shield:0,cloakT:0,burnT:0,slowT:0,markT:0,armor:0,band:0,kit:0,pend:0,down:0,downT:0,revP:0,finP:0,tagT:0,zoom:0,zoomK:0,litT:0,fenceT:0,fenceN:0,x:d.pos[i][0],y:d.pos[i][1],facing:d.pos[i][2],mv:{x:0,y:0},wantFire:false,vx:0,vy:0});
     f.tx=f.x;f.ty=f.y;f.tf=f.facing});
   if(d.map&&d.map!==MAPID)setMap(d.map);mapReset();G.dropNo=d.dn;G.sudden=!!d.su;G.draw=false;G.sc=d.sc;G.st=storm(0);G.bullets=[];G.deploys=[];G.orbs=[];G.fx=[];G.feed=[];G.time=0;boReset();G.pending=0;G.molo=0;G.afterPick=false;G.pOut=false;G.elimT=0;G.spectating=false;G.spec=null;G.ff=false;G.winner=null;
-  G.cam={x:G.P.x,y:G.P.y};NET.gotSnap=false;NET.hpPrev=G.P.hp;NET.pk=0;NET.picks=[];
+  G.cam={x:G.P.x,y:G.P.y};NET.gotSnap=false;NET.hpPrev=G.P.hp;NET.pk=0;NET.picks=[];NET.rate=1;NET.rt=null;
   SFX.drop();NARR.say(G.sudden?'vo_sudden':G.dropNo>1?'vo_next_drop':'vo_match_start',{force:true});G.mode='count';G.countdown=3.2+NARR.lead();hide();showHUD(true);
+}
+// The server's game clock can run slower than real time when its CPU is overloaded. Measure the ratio
+// over ~2s windows and predict our own movement at that speed, so the prediction never runs ahead of the server (that is what rubberbands).
+function netRateSample(d){
+  const now=performance.now(),R=NET.rt||(NET.rt={t:0,w:0,pT:null,pW:0});
+  if(MODEN[d.m]!=='play'||R.pT===null||d.T<R.pT||d.T-R.pT>2){R.pT=MODEN[d.m]==='play'?d.T:null;R.pW=now;return}
+  R.t+=d.T-R.pT;R.w+=(now-R.pW)/1000;R.pT=d.T;R.pW=now;
+  if(R.w>=2){const r=Math.max(.3,Math.min(1,R.t/R.w));NET.rate=r>.88?1:(NET.rate||1)*.4+r*.6;R.t=0;R.w=0}
 }
 function netApplySnap(d){
   if(!NET.live||NET.m!=='client'||!G.P)return;
@@ -7454,7 +7471,7 @@ function netApplySnap(d){
     if(nm==='ending'&&G.mode!=='ending'){G.winner=fs[d.w]||null;SFX.sting(d.w===NET.my)}
     if(!(G.mode==='ending'&&nm!=='ending'))G.mode=nm;
   }
-  G.time=d.T;G.countdown=d.cd;G.endT=d.et;if(d.bo)G.bo={s:d.bo[0],t:d.bo[1]};
+  netRateSample(d);G.time=d.T;G.countdown=d.cd;G.endT=d.et;if(d.bo)G.bo={s:d.bo[0],t:d.bo[1]};
   // self
   {const t=d.me,hp0=P.hp;P.alive=!!t[0];
     const o=1+FK.length,dsp=t[o+XK.indexOf('dashSp')];
@@ -7565,8 +7582,9 @@ function netClientUpdate(dt){
       if(P.jumpT>0||(P.dashT>0&&P.dashSp>800)){const k=Math.min(1,dt*14);P.x+=(P.tx-P.x)*k;P.y+=(P.ty-P.y)*k}
       else{
         let vx,vy;
-        if(P.dashT>0){vx=Math.cos(P.dashDir)*P.dashSp;vy=Math.sin(P.dashDir)*P.dashSp;if(Math.random()<.9)G.fx.push({kind:'ghost',x:P.x,y:P.y,age:0,life:.18,col:COL.you})}
-        else{const fx=P.st.fx,sp=SPEED*CHARS[P.weapon].spd*(1+.08*(fx.fleet||0)-.08*(fx.r_titan||0))*(P.healT>0?.5:1)*(P.slowT>0?1-P.slowAmt:1)*moveSp(P);vx=P.mv.x*sp;vy=P.mv.y*sp}
+        const srvR=NET.rate||1;
+        if(P.dashT>0){vx=Math.cos(P.dashDir)*P.dashSp*srvR;vy=Math.sin(P.dashDir)*P.dashSp*srvR;if(Math.random()<.9)G.fx.push({kind:'ghost',x:P.x,y:P.y,age:0,life:.18,col:COL.you})}
+        else{const fx=P.st.fx,sp=SPEED*CHARS[P.weapon].spd*(1+.08*(fx.fleet||0)-.08*(fx.r_titan||0))*(P.healT>0?.5:1)*(P.slowT>0?1-P.slowAmt:1)*moveSp(P)*srvR;vx=P.mv.x*sp;vy=P.mv.y*sp}
         P.x+=vx*dt;P.y+=vy*dt;collide(P);
       }
     }

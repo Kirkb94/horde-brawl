@@ -51,7 +51,8 @@ const MAX_ROOMS = +(process.env.MAX_ROOMS || 60);
 const MAX_MATCHES = +(process.env.MAX_MATCHES || (MODE === 'auth' ? 4 : 60));   // simultaneous server-run matches
 let PAGE = null;
 const loadGame = () => { if (!PAGE) PAGE = loadPage(fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8')); return PAGE; };
-const perf = { ticks: 0, ms: 0, max: 0, errors: 0, aborts: 0 };
+const perf = { ticks: 0, ms: 0, max: 0, errors: 0, aborts: 0, lost: 0 };   // lost = game seconds dropped because the CPU could not keep up
+const MAX_CATCHUP = 4;   // ticks run back to back after a stall
 const dropStats = { total: 0, rate: 0, client: 0, room: 0 };   // dropped inbound messages by reason (shown on /stats)
 const SIM_MAX_CONSEC = +(process.env.SIM_MAX_CONSEC || 5);    // consecutive failed ticks before the match is ended
 const SIM_MAX_TOTAL = +(process.env.SIM_MAX_TOTAL || 30);     // total failed ticks in one match before it is ended
@@ -71,7 +72,7 @@ const server = http.createServer((req, res) => {
   if (url === '/stats') {
     res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, SEC_HEADERS));
     return res.end(JSON.stringify({ mode: MODE, rooms: rooms.size, matches: [...rooms.values()].filter(r => r.sim).length, players: [...rooms.values()].reduce((n, r) => n + r.players.size, 0),
-      tickMsAvg: perf.ticks ? +(perf.ms / perf.ticks).toFixed(2) : 0, tickMsMax: +perf.max.toFixed(1), simErrors: perf.errors, simAborts: perf.aborts,
+      tickMsAvg: perf.ticks ? +(perf.ms / perf.ticks).toFixed(2) : 0, tickMsMax: +perf.max.toFixed(1), simErrors: perf.errors, simAborts: perf.aborts, lostGameSec: +perf.lost.toFixed(2),
       dropped: Object.assign({}, dropStats, { roomsThrottled: [...rooms.values()].filter(r => r.dropped > 0).length }) }));
   }
   if (process.env.DEBUG_HOOKS === '1' && url.startsWith('/debug/')) {   // test helpers, never enabled in production
@@ -405,23 +406,37 @@ function startSim(room, diff) {
   };
   room.sim = createSim(loadGame(), io);
   room.sim.api.start(players, diff, room.cfg);
-  let last = process.hrtime.bigint();
+  // Fixed-step loop that keeps game time in step with the real clock: real elapsed time goes into an accumulator and
+  // is spent in whole ticks of 1/TICK_HZ. After a slow tick (CPU throttling on small Render plans) it runs up to
+  // MAX_CATCHUP ticks back to back instead of silently dropping the time, which made the match run in slow motion
+  // and every client's predicted movement rubberband against the server.
+  let last = process.hrtime.bigint(), acc = 0;
   let fails = 0, totalFails = 0;
-  const step = 1000 / TICK_HZ;
+  const step = 1000 / TICK_HZ, stepS = 1 / TICK_HZ;
   const loop = () => {
     if (!room.sim) return;
     const t0 = process.hrtime.bigint();
-    const dt = Math.min(0.05, Number(t0 - last) / 1e9); last = t0;
+    acc += Math.min(0.25, Number(t0 - last) / 1e9); last = t0;   // never try to catch up more than 1/4 s
+    let n = 0;
+    while (acc >= stepS && n < MAX_CATCHUP && room.sim) {
+      acc -= stepS; n++;
+      if (!runTick(stepS)) return;
+    }
+    if (acc > stepS * 2) { perf.lost += acc - stepS; acc = stepS; }   // still behind after catching up: let the rest go
+    const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+    perf.ticks += n; perf.ms += ms; if (n && ms / n > perf.max) perf.max = ms / n;
+    if (perf.ticks > 6000) { perf.ticks = 1500; perf.ms = perf.ms / 4; perf.max = ms; }
+    if (!room.sim) return;
+    room.timer = setTimeout(loop, Math.max(1, Math.round((stepS - acc) * 1000)));
+  };
+  const runTick = (dt) => {
     try { room.sim.api.tick(dt); fails = 0; }
     catch (e) {
       fails++; totalFails++; perf.errors++;
       console.error('sim error (room ' + room.code + ', ' + fails + ' in a row, ' + totalFails + ' total)', e);
-      if (fails >= SIM_MAX_CONSEC || totalFails >= SIM_MAX_TOTAL) return abortMatch(room, 'repeated sim tick errors');
+      if (fails >= SIM_MAX_CONSEC || totalFails >= SIM_MAX_TOTAL) { abortMatch(room, 'repeated sim tick errors'); return false; }
     }
-    const ms = Number(process.hrtime.bigint() - t0) / 1e6;
-    perf.ticks++; perf.ms += ms; if (ms > perf.max) perf.max = ms;
-    if (perf.ticks > 6000) { perf.ticks = 1500; perf.ms = perf.ms / 4; perf.max = ms; }
-    room.timer = setTimeout(loop, Math.max(1, step - ms));
+    return true;
   };
   room.timer = setTimeout(loop, step);
 }

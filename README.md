@@ -55,7 +55,7 @@ Up to 16 players per room on one Render web service. The service serves the game
 | Who runs the match | **The server** (same game code, bots and zombies, headless) | The room creator's browser |
 | Host tab must stay open | No | Yes |
 | If the creator leaves | Match continues, next player becomes room leader | Room closes |
-| Render plan | **Starter or higher** (about 10% of a core per match) | Free works |
+| Render plan | **Standard (1 CPU) for full 16-fighter matches.** Starter (0.5 CPU) can't keep up once the horde grows: a match costs about 60% of a core, so the server gets throttled. See "Server speed" below | Free works |
 | Lag | One network hop, one clock, no weak host | Host's PC and upload limit everyone |
 | Rejoin after disconnect | Supported (auth only) | Not available: the server replies "Rejoin isn't available on this server" |
 
@@ -81,7 +81,12 @@ If a player drops mid-match, `MODE=auth` keeps their slot for a short time so th
 - `MAX_MATCHES` (default 4 in auth mode): matches the server runs at once. Each uses roughly 15 MB and 5 to 10% of a core.
 - `MAX_ROOMS` (default 60), `DEFLATE=0` turns off WebSocket compression
 - `ALLOWED_ORIGINS`: comma-separated origins (or bare hosts) whose pages may open the WebSocket, e.g. `https://mygame.example.com,other.example.org`. Use this only if the page is hosted somewhere other than this server. Always allowed without configuring: the server's own host (same-origin), `RENDER_EXTERNAL_URL`, `http(s)://localhost`, `127.0.0.1` and `[::1]` on any port (set `ALLOW_LOCALHOST=0` to turn that off), and non-browser clients that send no Origin header. `ALLOWED_ORIGINS=*` disables the check (not recommended). A rejected handshake gets HTTP 403 with a message naming the offending origin and this variable, and the server logs `ws: rejected origin ...`. Browsers show this as a failed WebSocket connection, so check the server log or the Network tab to see the message.
-- `GET /healthz` returns `ok`. `GET /stats` shows mode, rooms, matches and the server tick time (`tickMsAvg` should stay well under 33).
+- `GET /healthz` returns `ok`. `GET /stats` shows mode, rooms, matches, the server tick time (`tickMsAvg` should stay well under 33) and `lostGameSec`, the game time dropped because the CPU could not keep up. It should stay near 0.
+
+## Server speed (why online play rubberbanded)
+The server runs the match in fixed ticks of 1/`TICK_HZ` seconds. It measures real elapsed time and, after a stall (Render throttles a plan that uses more CPU than it pays for), runs up to 4 ticks back to back to catch up. The old loop capped each tick at 0.05s and dropped the rest. On the Starter plan that ran matches at about half speed, so each player's predicted movement kept running ahead of the server and got pulled back.
+Clients also measure how fast the server's clock really runs over 2-second windows. If it falls below about 90% of real time, they predict their own movement at that speed, so a struggling server feels slower rather than rubberbanding.
+On the server only, zombies with no fighter within 650px think every other tick. Zombies scan a per-tick list of living fighters instead of every entity on the map.
 
 ## Run locally
 ```
