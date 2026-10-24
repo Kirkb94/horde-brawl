@@ -306,7 +306,7 @@ function msgAllowed(ws, m, len) {
 }
 
 // Auth mode: rebuild a client's game payload from a whitelist before it reaches the simulation.
-const ACT_KEYS = ['a', 'd', 'h', 'm', 'r', 'u', 'z'];
+const ACT_KEYS = ['a', 'd', 'e', 'h', 'm', 'r', 'u', 'x', 'z'];   // e = skill, x = ultimate
 const RELAY_HOST_KINDS = ['s', 'start', 'res', 'drop'];   // relay mode: the only message kinds the host may send to peers
 const RELAY_MAX_HOST = 200000;                          // max serialized size of one host relay message (chars)
 const numIn = (v, lo, hi) => { v = +v; return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : 0; };

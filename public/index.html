@@ -6986,7 +6986,7 @@ const NET={ws:null,role:null,m:null,live:false,pid:0,hostPid:0,code:'',players:[
   cfg:{mode:'br',size:16,map:'random'},lastSnap:0,gotSnap:false,lag:.05,pts:null,betT:0,paused:false,keyR:0,hpPrev:0,hurtT:0,waitEl:null};
 try{NET.name=localStorage.getItem('hordename')||''}catch(e){}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const FK=['hamT','x','y','facing','hp','armor','vx','vy','dashT','jumpT','jx','jy','jtx','jty','jumpMax','swingT','swingSide','muzzle','reloadT','rdT','shield','shieldDir','shieldMax','cloakT','healT','healMax','burnT','slowT','markT','hitFlash','parryT','swordOut','defl','inv','stillT','shF','hurtT','healKind','down','downT','revP','finP','tagT','tagBy','zoom','litT','fenceT','fenceN','scanWarn','stunT','parryK','bulT','ocT'];
+const FK=['x','y','facing','hp','armor','vx','vy','dashT','jumpT','jx','jy','jtx','jty','jumpMax','swingT','swingSide','muzzle','reloadT','rdT','shield','shieldDir','shieldMax','cloakT','healT','healMax','burnT','slowT','markT','hitFlash','parryT','swordOut','defl','inv','stillT','shF','hurtT','healKind','down','downT','revP','finP','tagT','tagBy','zoom','litT','fenceT','fenceN','scanWarn','stunT','parryK','bulT','ocT','hamT'];   // x, y, facing must stay first: the client reads them by position
 const XK=['level','xp','kills','dropKills','wins','pts','zk','ammo','abCD','abCh','abChT','mines','mineT','band','kit','dashCD','hurtA','place','pend','slowAmt','dashSp','dashDir','ult','skCD','dash2CD'];
 const ZKS=['walker','brute','sprinter','hunter','runner','boss'];
 const ITM=[undefined,'band','kit','armor'];
