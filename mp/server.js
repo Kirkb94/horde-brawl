@@ -16,7 +16,7 @@ const roomsOfIp = ip => { let n = 0; for (const r of rooms.values()) if (r.ip ==
 const HOST_RELAY_MAX = 240 * 1024;   // host snapshots can be big
 const CLIENT_RELAY_MAX = 32 * 1024;  // client inputs are small
 const CLIENT_RELAY_RATE = 120;       // max relay 'r' messages per second from a non-host client
-const LIMITS = { create: [3, 10000], join: [8, 10000], quick: [4, 10000], upd: [6, 5000], start: [4, 5000], lobby: [4, 5000] };   // [max, window ms]
+const LIMITS = { rejoin: [6, 10000], create: [3, 10000], join: [8, 10000], quick: [4, 10000], upd: [6, 5000], start: [4, 5000], lobby: [4, 5000] };   // [max, window ms]
 const IP_JOIN_MAX = +(process.env.IP_JOIN_MAX || 30);   // join+quick attempts per IP per window (all sockets share it)
 const IP_JOIN_WINDOW = 10000;
 const ipJoin = new Map();   // ip -> { n, t }
@@ -232,11 +232,11 @@ function joinRoom(ws, room, name, weapon) {
   if (room.started) return fail('That match already started.');
   // All checks passed: only now release the old room (the target is a different room, so it is unaffected).
   leaveRoom(ws);
-  const p = { ws, pid: nextPid++, name: uniqueName(room, name), weapon: WEAPONS.includes(weapon) ? weapon : 'rifle' };
+  const p = { ws, pid: nextPid++, name: uniqueName(room, name), weapon: WEAPONS.includes(weapon) ? weapon : 'rifle', token: require('crypto').randomBytes(12).toString('hex'), held: false, holdTimer: null };
   ws.p = p; ws.room = room;
   room.players.set(p.pid, p);
   if (!room.host) room.host = p.pid;
-  send(ws, { t: 'joined', code: room.code, pid: p.pid, host: room.host, players: list(room), started: room.started });
+  send(ws, { t: 'joined', code: room.code, pid: p.pid, host: room.host, players: list(room), started: room.started, token: p.token });
   bcastPlayers(room);
 }
 function leaveRoom(ws) {
@@ -420,7 +420,7 @@ wss.on('connection', (ws, req) => {
         }
         const nm = typeof m.name === 'string' ? clean(m.name, 16) : '';
         if (nm) {                                      // empty/invalid names are ignored
-          const others = new Map([...room.players].filter(([k]) => k !== p.pid));
+          const others = new Map([...room.players].filter(([k]) => k !== p.pid));   // exclude self so keeping your own name isn't renamed
           p.name = uniqueName({ players: others }, nm);
         }
         if (typeof m.weapon === 'string' && WEAPONS.includes(m.weapon)) p.weapon = m.weapon;
@@ -431,17 +431,13 @@ wss.on('connection', (ws, req) => {
           send(ws, { t: 'err', msg: 'Need another player to start a match.' });
           send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });
         }
-        else if (p.pid === room.host && !room.started && [...room.players.values()].some(q => !q.ws || q.ws.readyState !== 1)) {
-          send(ws, { t: 'err', msg: 'A player is disconnecting. Wait a moment and try again.' });
-          send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });
-        }
         else if (p.pid === room.host && !room.started) {
           let bad = null;
-          for (const q of room.players.values()) if (q.ws && q.ws.readyState > 1) { bad = q; break; }   // 2 = CLOSING, 3 = CLOSED
+          for (const q of room.players.values()) if (!q.ws || q.ws.readyState !== 1) { bad = q; break; }   // missing, 2 = CLOSING or 3 = CLOSED
           if (bad) {
-            send(ws, { t: 'err', msg: 'Can\'t start: ' + (bad.name || 'a player') + '\'s connection is closing. Try again in a moment.' });
+            send(ws, { t: 'err', msg: 'Can\'t start: ' + (bad.name || 'a player') + '\'s connection is dropped or closing. Try again in a moment.' });
             send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });
-          } else { room.started = true; bcastPlayers(room); }
+          } else { room.started = true; room.lastRelay = Date.now(); bcastPlayers(room); }
         }
         else {
           if (p.pid !== room.host) send(ws, { t: 'err', msg: 'Only the host can start the match.' });
@@ -456,6 +452,21 @@ wss.on('connection', (ws, req) => {
         }
         else send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });   // no-op lobby: resync sender only
         return;
+      case 'rejoin': {                                 // reattach a new socket to a slot held after a drop
+        const fail = (msg) => send(ws, { t: 'err', msg, rejoin: false });
+        if (room || p) return fail('Already in a room.');
+        const rr = rooms.get(clean(m.code, 4).toUpperCase());
+        const tok = typeof m.token === 'string' ? m.token : '';
+        let q = null;
+        if (rr && tok) for (const x of rr.players.values()) if (x.token === tok) { q = x; break; }
+        if (!q || !rr.started) return fail('Could not rejoin: that slot is no longer held.');
+        clearTimeout(q.holdTimer); q.held = false;
+        const old = q.ws;
+        if (old && old !== ws) { old.room = null; old.p = null; if (old.readyState === 1) { try { old.terminate(); } catch (e) {} } }   // half-dead old socket: replaced
+        q.ws = ws; ws.p = q; ws.room = rr;
+        rr.active = Date.now();
+        return send(ws, { t: 'joined', code: rr.code, pid: q.pid, host: rr.host, players: list(rr), started: rr.started, token: q.token, rejoined: true });
+      }
       case 'leave': return leaveRoom(ws);
       case 'r': {                                      // relay: client -> host, host -> peer or everyone
         if (!room || !p) return noRoom(ws);
@@ -465,6 +476,7 @@ wss.on('connection', (ws, req) => {
         if (p.pid === room.host && m.to !== '*' && (m.to === p.pid || !room.players.has(m.to))) return;   // host target must exist
         if (p.pid === room.host) {
           if (!room.started) return;                   // no host relay while in the lobby: stale snapshots from an aborted match
+          room.lastRelay = Date.now();                 // host is alive: feeds the stuck-room sweep
           if (m.to === '*') { const out = JSON.stringify({ t: 'r', from: p.pid, d: m.d }); const snap = m.d.k === 's'; for (const q of room.players.values()) if (q !== p) safeSend(q.ws, out, snap); }   // only stale snapshots are dropped for slow links
           else { const q = room.players.get(m.to); if (q) {
             safeSend(q.ws, JSON.stringify({ t: 'r', from: p.pid, d: m.d }), m.d.k === 's'); } }   // drop stale snapshots for slow links
@@ -476,9 +488,27 @@ wss.on('connection', (ws, req) => {
       }
     }
   };
-  ws.on('close', () => { clearInterval(rate); freeIp(); try { leaveRoom(ws); } catch (e) { console.error('[leaveRoom on close]', e && e.stack || e); } });
+  ws.on('close', () => { clearInterval(rate); freeIp(); try { holdOrLeave(ws); } catch (e) { console.error('[holdOrLeave on close]', e && e.stack || e); } });
   ws.on('error', () => {});
 });
+
+// A socket closed. During a running match the slot is held for HOLD_MS so the player can 'rejoin' with their token;
+// otherwise (lobby, shutdown) they leave at once. When the hold expires it behaves like a normal leave.
+const HOLD_MS = +(process.env.HOLD_MS || 30000);
+function holdOrLeave(ws) {
+  const room = ws.room, p = ws.p;
+  if (!room || !p) return;
+  if (shuttingDown || !room.started || !p.token || room.players.get(p.pid) !== p || rooms.get(room.code) !== room) return leaveRoom(ws);
+  ws.room = null; ws.p = null;                         // the dead socket no longer owns the slot
+  p.held = true;
+  clearTimeout(p.holdTimer);
+  p.holdTimer = setTimeout(() => {
+    if (!p.held || rooms.get(room.code) !== room || room.players.get(p.pid) !== p) return;
+    p.held = false;
+    leaveRoom({ room, p });
+  }, HOLD_MS);
+  if (p.holdTimer.unref) p.holdTimer.unref();
+}
 
 function noRoom(ws) {                                  // tell a roomless socket why its message was ignored (max 1/s)
   const now = Date.now();
@@ -492,6 +522,16 @@ setInterval(() => {
   const now = Date.now();                              // sweep empty / abandoned lobbies
   for (const [c, r] of rooms) {
     if (!r.players.size) { rooms.delete(c); continue; }
+    if (r.started && now - (r.lastRelay || r.created) > 120000) {   // started but host relayed nothing for 2 min: frozen tab, back to the lobby
+      r.started = false; r.lastRelay = 0;
+      for (const q of r.players.values()) {
+        if (!q || !q.ws) continue;
+        q.ws.rel = 0; q.ws.relHot = false; q.ws.relSecs = 0;
+        if (q.ws.readyState === 1) send(q.ws, { t: 'err', msg: 'Host stopped responding. Back to the lobby.' });
+      }
+      bcastPlayers(r);
+      continue;
+    }
     if (now - (r.active || r.created) > 6 * 3600e3) {   // idle for 6 hours: notify, then close
       const hp = r.players.get(r.host);
       if (r.started && hp && hp.ws && hp.ws.readyState === 1) continue;   // running match with a live host: keep it
@@ -529,7 +569,7 @@ function finishShutdown(reason, code) {
   console.log('Shutting down: ' + reason);
   try { wss.close(); } catch (e) {}
   for (const ws of wss.clients) {
-    try { send(ws, { t: 'closed', reason: 'Server is restarting - please create or join a room again in a moment.' }); } catch (e) {}
+    if (!graceStarted) send(ws, { t: 'closed', restarting: true, reason: 'Server is restarting - please create or join a room again in a moment.' });   // normally already sent by shutdown()
     try { ws.close(1001, 'server restarting'); } catch (e) {}
   }
   rooms.clear();

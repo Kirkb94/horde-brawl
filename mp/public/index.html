@@ -2843,21 +2843,50 @@ function netConnect(then){
   NET.ws=ws;let failed=false,opened=false;const to=setTimeout(()=>{if(ws.readyState===0){failed=true;try{ws.close()}catch(_){}}},15000);
   ws.onopen=()=>{opened=true;clearTimeout(to);NET.status='';NET.lastMsg=Date.now();then()};
   ws.onmessage=e=>{NET.lastMsg=Date.now();let m;try{m=JSON.parse(e.data)}catch(_){return}netMsg(m)};
-  ws.onclose=()=>{clearTimeout(to);if(NET.ws===ws){NET.ws=null;netDropped(failed?'Could not reach server (no answer in 15 seconds). Check the address under Server or try again.':opened?(NET.live?'Connection lost: the match ended because the server connection dropped.':'Lost connection to the server.'):'Could not reach the server. Check the address under Server.')}};
+  ws.onclose=()=>{clearTimeout(to);if(NET.ws===ws){NET.ws=null;if(opened&&NET.live&&NET.code&&NET.tok){netRecoStart();return}netDropped(failed?'Could not reach server (no answer in 15 seconds). Check the address under Server or try again.':opened?(NET.live?'Connection lost: the match ended because the server connection dropped.':'Lost connection to the server.'):'Could not reach the server. Check the address under Server.')}};
   ws.onerror=()=>{};
 }
 setInterval(()=>{if(NET.ws&&NET.ws.readyState===1)netSend({t:'ping',ts:Date.now()})},3000);
 // Silence watchdog: the server answers every ping, so 30s without any message means the link is dead.
 const NET_SILENCE_MS=12000;
-setInterval(()=>{if(NET.ws&&NET.ws.readyState===1&&!document.hidden&&NET.lastMsg&&Date.now()-NET.lastMsg>NET_SILENCE_MS)netDropped('Connection lost: the server stopped responding (no data for 12 seconds).')},1000);
+setInterval(()=>{if(NET.ws&&NET.ws.readyState===1&&!document.hidden&&NET.lastMsg&&Date.now()-NET.lastMsg>NET_SILENCE_MS)netLost('Connection lost: the server stopped responding (no data for 12 seconds).')},1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)NET.lastMsg=Date.now()});
 function netCleanup(){NET.live=false;NET.m=null;NET.paused=false;NET.zm.clear();NET.inp={};NET.cl={};NET.ready={};NET.acts=[];G.fighters=[];G.P=null;G.bullets=[];G.deploys=[];G.orbs=[];G.fx=[];G.spectating=false;G.pOut=false;G.mode='menu';showHUD(false)}
-function netDropped(msg){
+function netDropped(msg){netRecoStop();NET.tok='';
   const had=NET.code||NET.live||NET.status;
   NET.code='';NET.role=null;NET.status='';NET.players=[];if(NET.ws){try{NET.ws.onclose=null;NET.ws.close()}catch(_){}NET.ws=null}
   netCleanup();if(had)NET.notice=msg||'Disconnected.';netMenu();
 }
-function netLeave(){netSend({t:'leave'});if(NET.ws){try{NET.ws.onclose=null;NET.ws.close()}catch(_){}NET.ws=null}NET.code='';NET.role=null;NET.players=[];netCleanup();menu()}
+function netLeave(){netRecoStop();NET.tok='';netSend({t:'leave'});if(NET.ws){try{NET.ws.onclose=null;NET.ws.close()}catch(_){}NET.ws=null}NET.code='';NET.role=null;NET.players=[];netCleanup();menu()}
+// ---------- auto-rejoin: the server holds a dropped player's slot for 30s ----------
+const NET_REJOIN_MS=28000;   // stay under the server's 30s hold
+function netRecoStop(){if(NET.reco){clearTimeout(NET.reco.tm);NET.reco=null}}
+function netRecoFail(msg){netRecoStop();NET.tok='';netDropped(msg||'Connection lost: could not get back into the match.')}
+function netLost(msg){if(NET.reco)return;if(NET.live&&NET.code&&NET.tok)netRecoStart();else netDropped(msg)}
+function netRecoStart(){
+  if(NET.reco)return;
+  if(NET.ws){try{NET.ws.onclose=null;NET.ws.close()}catch(_){}NET.ws=null}
+  NET.reco={t0:Date.now(),n:0,tm:0};
+  try{feedAdd('Connection lost - reconnecting...',false)}catch(_){}
+  netRecoTry();
+}
+function netRecoNext(){
+  const R=NET.reco;if(!R)return;
+  const d=Math.min(3000,500*Math.pow(2,R.n++));
+  if(Date.now()-R.t0+d>NET_REJOIN_MS){netRecoFail('Connection lost: could not reconnect in time, so you left the match.');return}
+  R.tm=setTimeout(netRecoTry,d);
+}
+function netRecoTry(){
+  const R=NET.reco;if(!R)return;
+  if(Date.now()-R.t0>NET_REJOIN_MS){netRecoFail('Connection lost: could not reconnect in time, so you left the match.');return}
+  let ws;try{ws=new WebSocket(netUrl())}catch(e){netRecoNext();return}
+  NET.ws=ws;
+  const to=setTimeout(()=>{if(ws.readyState===0){try{ws.close()}catch(_){}}},6000);
+  ws.onopen=()=>{clearTimeout(to);NET.lastMsg=Date.now();netSend({t:'rejoin',code:NET.code,token:NET.tok});setTimeout(()=>{if(NET.reco&&NET.ws===ws){try{ws.close()}catch(_){}}},6000)};
+  ws.onmessage=e=>{NET.lastMsg=Date.now();let m;try{m=JSON.parse(e.data)}catch(_){return}netMsg(m)};
+  ws.onclose=()=>{clearTimeout(to);if(NET.ws===ws){NET.ws=null;if(NET.reco)netRecoNext();else if(NET.live&&NET.code&&NET.tok)netRecoStart();else netDropped('Lost connection to the server.')}};
+  ws.onerror=()=>{};
+}
 function netNum(v){return typeof v==='number'&&Number.isFinite(v)}
 function netPlOk(m){
   if(!Array.isArray(m.players)||m.players.length>16||!netNum(m.host))return false;
@@ -2905,15 +2934,19 @@ function netMsg(m){
 }
 function netMsgInner(m){
   switch(m.t){
-    case'joined':NET.pid=m.pid;NET.code=m.code;NET.hostPid=m.host;NET.players=m.players;NET.role=m.pid===m.host?'host':'client';NET.notice='';netLobby();break;
+    case'joined':if(m.token)NET.tok=m.token;
+      if(m.rejoined){netRecoStop();NET.pid=m.pid;NET.code=m.code;NET.hostPid=m.host;NET.players=m.players;NET.role=m.pid===m.host?'host':'client';NET.notice='';NET.lastSnap=performance.now();NET.lastMsg=Date.now();
+        if(!m.started){if(NET.live)netCleanup();netLobby()}else{try{feedAdd('Reconnected',false)}catch(_){}}
+        break}
+      NET.pid=m.pid;NET.code=m.code;NET.hostPid=m.host;NET.players=m.players;NET.role=m.pid===m.host?'host':'client';NET.notice='';netLobby();break;
     case'players':
       NET.players=m.players;NET.hostPid=m.host;NET.role=NET.pid===m.host?'host':'client';
       if(m.started&&NET.starting&&NET.role==='host'){NET.starting=false;NET.notice='';netHostStart();break}
       if(!m.started){if(NET.live)netCleanup();else{NET.m=null;NET.cl={};NET.inp={};NET.ready={};NET.acts=[]}netLobby()}else if(!NET.live)netLobby();break;
     case'left':if(NET.m==='host')netBotify(m.pid);break;
     case'hostleft':NET.m=null;NET.cl={};NET.inp={};NET.ready={};NET.acts=[];NET.notice=(m.aborted?'The host left, so the match ended. ':'The host left. ')+(m.host===NET.pid?'You are now the host.':(m.name||'Another player')+' is now the host.');break;
-    case'closed':NET.code='';NET.role=null;if(NET.ws){try{NET.ws.onclose=null;NET.ws.close()}catch(_){}NET.ws=null}netCleanup();NET.notice=m.reason||'The room was closed.';netMenu();break;
-    case'err':NET.starting=false;NET.status='';NET.notice=m.msg||'Error';if(NET.live)break;if(NET.code)netLobby();else netMenu();break;
+    case'closed':netRecoStop();NET.tok='';NET.code='';NET.role=null;if(NET.ws){try{NET.ws.onclose=null;NET.ws.close()}catch(_){}NET.ws=null}netCleanup();NET.notice=m.reason||'The room was closed.';netMenu();break;
+    case'err':if(NET.reco){if(m.rejoin===false)netRecoFail(m.msg);break}NET.starting=false;NET.status='';NET.notice=m.msg||'Error';if(NET.live)break;if(NET.code)netLobby();else netMenu();break;
     case'pong':NET.rtt=Math.max(0,Date.now()-m.ts);NET.lag=Math.min(.12,NET.rtt/2000+.03);break;
     case'r':netRecv(m.from,m.d);break;
   }

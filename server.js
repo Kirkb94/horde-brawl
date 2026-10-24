@@ -447,6 +447,8 @@ function bcastPlayers(room) {
 // Returns an error message if the room can't accept a new player right now, else null.
 const joinBlock = room => room.players.size >= roomCap(room) ? 'That room is full.' : room.started ? 'That match already started.' : null;
 const activeMatches = () => [...rooms.values()].filter(r => r.sim).length;
+// A room the player is alone in is deleted when they leave it, so it doesn't count against MAX_ROOMS for a new room.
+const freedSlot = ws => (ws.room && ws.p && ws.room.players.size <= 1 && rooms.get(ws.room.code) === ws.room) ? 1 : 0;
 function joinRoom(ws, room, name, weapon) {
   const block = joinBlock(room);
   if (block) return send(ws, { t: 'err', msg: block });
@@ -570,7 +572,7 @@ wss.on('connection', (ws, req) => {
     switch (m.t) {
       case 'ping': return send(ws, { t: 'pong', ts: (typeof m.ts === 'number' && isFinite(m.ts)) ? m.ts : 0 });
       case 'create': {
-        if (rooms.size >= MAX_ROOMS) return serverFull(ws);
+        if (rooms.size - freedSlot(ws) >= MAX_ROOMS) return serverFull(ws);
         if (roomLimited(ws)) return;
         const code = newCode(); if (!code || rooms.has(code)) return serverFull(ws);
         const r = { code, players: new Map(), held: new Map(), host: 0, started: false, created: Date.now(), auth: MODE === 'auth', sim: null, cfg: newCfg() };
@@ -589,7 +591,7 @@ wss.on('connection', (ws, req) => {
         let best = null;
         for (const r of rooms.values()) if (!joinBlock(r) && (!best || r.players.size > best.players.size)) best = r;
         if (!best) {
-          if (rooms.size >= MAX_ROOMS) return serverFull(ws);
+          if (rooms.size - freedSlot(ws) >= MAX_ROOMS) return serverFull(ws);
           if (MODE === 'auth' && activeMatches() >= MAX_MATCHES) return send(ws, { t: 'err', msg: 'The server is running as many matches as it can. Try again shortly.' });
           if (roomLimited(ws)) return;
           const code = newCode(); if (!code || rooms.has(code)) return serverFull(ws);
@@ -619,12 +621,12 @@ wss.on('connection', (ws, req) => {
       }
       case 'upd': {
         if (!room || !p) return;
-        if (room.started) return;                      // roster is locked once the match is running
+        if (room.started) return send(ws, { t: 'err', msg: 'Name and hero are locked once the match starts.' });   // roster is locked once the match is running
         if (m.name !== undefined && typeof m.name !== 'string') return send(ws, { t: 'err', msg: 'Invalid name.' });
         if (m.weapon !== undefined && typeof m.weapon !== 'string') return send(ws, { t: 'err', msg: 'Invalid weapon.' });
         if (m.team !== undefined && m.team !== 0 && m.team !== 1) return send(ws, { t: 'err', msg: 'Invalid team.' });
         if (m.team === 0 || m.team === 1) { const n = [...room.players.values()].filter(q => q !== p && q.team === m.team).length; if (room.cfg.mode !== 'team' || n < teamSize(room.cfg.size)) p.team = m.team; else send(ws, { t: 'err', msg: 'That team is full.' }); }
-        if (typeof m.name === 'string') p.name = uniqueName({ players: new Map([...room.players].filter(([k]) => k !== p.pid)) }, m.name);
+        if (typeof m.name === 'string' && clean(m.name, 14)) p.name = uniqueName({ players: new Map([...room.players].filter(([k]) => k !== p.pid)) }, m.name);
         if (WEAPONS.includes(m.weapon)) p.weapon = m.weapon;
         return bcastPlayers(room);
       }
