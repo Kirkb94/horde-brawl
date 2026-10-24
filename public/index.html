@@ -176,11 +176,11 @@ html[data-plat=phone] #ultBtn.full{background-color:rgba(255,95,210,.5)}
 #panel{width:100%;max-width:520px;max-height:100%;overflow-y:auto;touch-action:pan-y;
   background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:22px 20px;
   display:flex;flex-direction:column;gap:16px}
-.pfoot{position:sticky;bottom:0;z-index:2;display:flex;flex-direction:column;margin:0 -20px -22px;padding:10px 20px 22px;background:var(--panel)}
+.pfoot{position:sticky;bottom:0;z-index:2;display:flex;flex-direction:column;margin:0 -20px -22px;padding:26px 20px 22px;background:var(--panel)}
 .pfoot::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:28px;background:linear-gradient(to top,var(--panel),transparent);pointer-events:none}
 #scrollCue{position:fixed;z-index:45;transform:translateY(-100%);display:flex;justify-content:flex-end;box-sizing:border-box;padding-right:12px;pointer-events:none;margin-top:-6px}
 #scrollCue[hidden]{display:none}
-.pfoot.more::after{content:"▼ Scroll for more";order:-1;align-self:center;margin-bottom:6px;font:700 11px Rubik,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);opacity:.8}
+.pfoot.more::after{content:"▼ Scroll for more";position:absolute;top:8px;left:0;right:0;text-align:center;pointer-events:none;font:700 11px Rubik,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);opacity:.8}
 #scrollCue span{font:700 11px Rubik,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);background:rgba(20,28,32,.92);border:1px solid var(--line);border-radius:999px;padding:5px 12px;box-shadow:0 2px 10px rgba(0,0,0,.6)}
 .eyebrow{margin:0;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--storm)}
 h1{margin:0;font-size:clamp(40px,11vw,60px);line-height:.9;font-weight:800;letter-spacing:-.02em;text-wrap:balance;text-transform:uppercase}
@@ -405,11 +405,12 @@ html[data-plat=pc] #keys{bottom:252px}
 #panel{background:var(--panel);border:2px solid var(--line);border-radius:14px}
 #ov.bpMenu #panel,html[data-plat=pc] #ov.bpMenu #panel{max-width:1080px;background:transparent;border:0;padding-top:8px}
 .pfoot{background:var(--panel)}
-#ov.bpMenu .pfoot{background:var(--void)}
-#ov.bpMenu .pfoot::before{background:linear-gradient(to top,var(--void),transparent);height:56px}
+#ov.bpMenu .pfoot{position:static;background:var(--void);margin:0;padding:14px 0 22px}
+#ov.bpMenu .pfoot::before,#ov.bpMenu .pfoot.more::after{content:none;display:none}
+#ov.bpMenu #panel{padding-bottom:24px}
 .eyebrow{color:var(--pink);font-weight:800}
 h1{font-weight:900;font-style:italic;letter-spacing:-.01em;color:#fff;-webkit-text-stroke:2px var(--void);paint-order:stroke fill;text-shadow:4px 4px 0 var(--pink);transform:skewX(-6deg);transform-origin:left;align-self:flex-start;
-  background:none;padding:0 6px}
+  background:none;padding:4px 6px 0}
 h1 em{color:var(--you);text-shadow:4px 4px 0 #6e3df5}
 h2{font-weight:900;color:#fff;letter-spacing:.02em}
 .lede{color:var(--muted)}
@@ -569,7 +570,7 @@ html[data-plat=phone] #panel:has(#bpAbTop) > .group:has(#bpHero) > #bpHero{order
 html[data-plat=phone] #panel:has(#bpAbTop) > .group:has(#bpHero) > .glabel::after{content:"  ·  swipe for more  ›";color:var(--lav2);opacity:.8}
 html[data-plat=phone] #bpHero:not(.gopen) .bpHG{display:none}
 html[data-plat=phone] #bpHGTog{display:flex;align-self:flex-start;margin:2px 0 0;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.04);color:var(--ink);font:800 11px Rubik,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
-html[data-plat=phone] #panel:has(#bpAbTop) .pfoot{padding:6px 20px 8px;margin-bottom:-22px}
+html[data-plat=phone] #panel:has(#bpAbTop) .pfoot{padding:22px 20px 8px;margin-bottom:-22px}
 html[data-plat=phone] #panel:has(#bpAbTop) .pfoot .go{padding:9px 14px;font-size:15px}
 }
 #bpHGTog{display:none}
@@ -5255,10 +5256,11 @@ function hide(){ov.hidden=true}
 // Scroll cue: shows when the panel has more content below, placed above the sticky bar (.pfoot) if any
 const scrollCue=document.createElement('div');scrollCue.id='scrollCue';scrollCue.hidden=true;scrollCue.innerHTML='<span>▼ Scroll for more</span>';document.body.appendChild(scrollCue);
 function panelCue(){
-  if(ov.hidden||ov.classList.contains('bpMenu')){scrollCue.hidden=true;return}
+  if(ov.hidden){scrollCue.hidden=true;return}
   const pf=panel.querySelector('.pfoot'),h=pf?pf.offsetHeight:0;
+  if(ov.classList.contains('bpMenu')){scrollCue.hidden=true;if(pf)pf.classList.remove('more');panel.style.scrollPaddingBottom=(h+12)+'px';panel.style.paddingBottom=(h+16)+'px';return}
   panel.style.scrollPaddingBottom=(h+12)+'px';
-  panel.style.paddingBottom=Math.max(22,h)+'px';
+  panel.style.paddingBottom='';
   const left=panel.scrollHeight-panel.clientHeight-panel.scrollTop;
   if(left<=8||(cmpPhone()&&panel.scrollTop>30)){scrollCue.hidden=true;if(pf)pf.classList.remove('more');return}
   if(pf){pf.classList.add('more');scrollCue.hidden=true;return}   // footer shows its own hint, no floating pill over the content

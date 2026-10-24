@@ -210,7 +210,7 @@ function roomLimited(ws) {
 }
 
 const clean = (s, n) => String(s == null ? '' : s).replace(/[^\w \-.!?]/g, '').replace(/ {2,}/g, ' ').trim().slice(0, n).trim();
-const send = (ws, o) => { if (ws.readyState === 1) ws.send(JSON.stringify(o)); };
+const send = (ws, o) => { try { if (ws && ws.readyState === 1) { ws.send(JSON.stringify(o)); return true; } } catch (e) {} return false; };
 function rejoinFail(ws, msg) {
   ws.rjFails = (ws.rjFails || 0) + 1;
   send(ws, { t: 'err', msg, rejoin: false });
@@ -564,7 +564,7 @@ wss.on('connection', (ws, req) => {
     if (ws.room && m.t !== 'ping') ws.room.active = Date.now();   // pings are sent every few seconds and must not keep a lobby alive
     const room = ws.room, p = ws.p;
     switch (m.t) {
-      case 'ping': return send(ws, { t: 'pong', ts: m.ts });
+      case 'ping': return send(ws, { t: 'pong', ts: (typeof m.ts === 'number' && isFinite(m.ts)) ? m.ts : 0 });
       case 'create': {
         if (rooms.size >= MAX_ROOMS) return serverFull(ws);
         if (roomLimited(ws)) return;

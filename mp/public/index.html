@@ -962,7 +962,7 @@ function addNum(target,amt,col){
   if(last){last.v+=amt;last.age=0;last.x=target.x;last.y=target.y-26}else G.fx.push({kind:'num',tgt:target,v:amt,x:target.x,y:target.y-26,age:0,col});
 }
 let lastBuzz=0;
-function feedAdd(text,hot){G.feed.push({text,hot,age:0});if(G.feed.length>5)G.feed.shift()}
+function feedAdd(text,hot){text=String(text==null?'':text).replace(/[\u0000-\u001f\u007f]/g,'').slice(0,120);G.feed.push({text,hot,age:0});if(G.feed.length>5)G.feed.shift()}
 function shieldBreak(t){
   if(near(t.x,t.y))burst(t.x,t.y,'#7fd7ff',18,300);
   G.fx.push({kind:'ring',x:t.x,y:t.y,age:0,life:.35,r:34,col:'#7fd7ff'});
@@ -2840,16 +2840,16 @@ function netConnect(then){
   if(NET.ws&&NET.ws.readyState===0)return;
   NET.status='Connecting… (gives up after 15 seconds)';netMenu();
   let ws;try{ws=new WebSocket(netUrl())}catch(e){NET.status='';NET.notice='That server address is not valid.';netMenu();return}
-  NET.ws=ws;let failed=false;const to=setTimeout(()=>{if(ws.readyState===0){failed=true;try{ws.close()}catch(_){}}},15000);
-  ws.onopen=()=>{clearTimeout(to);NET.status='';NET.lastMsg=Date.now();then()};
+  NET.ws=ws;let failed=false,opened=false;const to=setTimeout(()=>{if(ws.readyState===0){failed=true;try{ws.close()}catch(_){}}},15000);
+  ws.onopen=()=>{opened=true;clearTimeout(to);NET.status='';NET.lastMsg=Date.now();then()};
   ws.onmessage=e=>{NET.lastMsg=Date.now();let m;try{m=JSON.parse(e.data)}catch(_){return}netMsg(m)};
-  ws.onclose=()=>{clearTimeout(to);if(NET.ws===ws){NET.ws=null;netDropped(failed?'Could not reach server (no answer in 15 seconds). Check the address under Server or try again.':NET.status||NET.code||NET.live?'Lost connection to the server.':'Could not reach the server. Check the address under Server.')}};
+  ws.onclose=()=>{clearTimeout(to);if(NET.ws===ws){NET.ws=null;netDropped(failed?'Could not reach server (no answer in 15 seconds). Check the address under Server or try again.':opened?'Lost connection to the server.':'Could not reach the server. Check the address under Server.')}};
   ws.onerror=()=>{};
 }
 setInterval(()=>{if(NET.ws&&NET.ws.readyState===1)netSend({t:'ping',ts:Date.now()})},3000);
-// Silence watchdog: the server answers every ping, so 12s without any message means the link is dead.
-const NET_SILENCE_MS=12000;
-setInterval(()=>{if(NET.ws&&NET.ws.readyState===1&&!document.hidden&&NET.lastMsg&&Date.now()-NET.lastMsg>NET_SILENCE_MS)netDropped('Lost connection: the server stopped responding (no data for 12 seconds).')},1000);
+// Silence watchdog: the server answers every ping, so 30s without any message means the link is dead.
+const NET_SILENCE_MS=30000;
+setInterval(()=>{if(NET.ws&&NET.ws.readyState===1&&!document.hidden&&NET.lastMsg&&Date.now()-NET.lastMsg>NET_SILENCE_MS)netDropped('Connection lost: the server stopped responding (no data for 30 seconds).')},1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)NET.lastMsg=Date.now()});
 function netCleanup(){NET.live=false;NET.m=null;NET.paused=false;NET.zm.clear();NET.inp={};NET.cl={};NET.ready={};NET.acts=[];G.fighters=[];G.P=null;G.bullets=[];G.deploys=[];G.orbs=[];G.fx=[];G.spectating=false;G.pOut=false;G.mode='menu';showHUD(false)}
 function netDropped(msg){
@@ -2908,11 +2908,12 @@ function netMsgInner(m){
     case'joined':NET.pid=m.pid;NET.code=m.code;NET.hostPid=m.host;NET.players=m.players;NET.role=m.pid===m.host?'host':'client';NET.notice='';netLobby();break;
     case'players':
       NET.players=m.players;NET.hostPid=m.host;NET.role=NET.pid===m.host?'host':'client';
+      if(m.started&&NET.starting&&NET.role==='host'){NET.starting=false;NET.notice='';netHostStart();break}
       if(!m.started){if(NET.live)netCleanup();else{NET.m=null;NET.cl={};NET.inp={};NET.ready={};NET.acts=[]}netLobby()}else if(!NET.live)netLobby();break;
     case'left':if(NET.m==='host')netBotify(m.pid);break;
     case'hostleft':NET.m=null;NET.cl={};NET.inp={};NET.ready={};NET.acts=[];NET.notice=(m.aborted?'The host left, so the match ended. ':'The host left. ')+(m.host===NET.pid?'You are now the host.':(m.name||'Another player')+' is now the host.');break;
     case'closed':NET.code='';NET.role=null;if(NET.ws){try{NET.ws.onclose=null;NET.ws.close()}catch(_){}NET.ws=null}netCleanup();NET.notice=m.reason||'The room was closed.';netMenu();break;
-    case'err':NET.status='';NET.notice=m.msg||'Error';if(NET.live)break;if(NET.code)netLobby();else netMenu();break;
+    case'err':NET.starting=false;NET.status='';NET.notice=m.msg||'Error';if(NET.live)break;if(NET.code)netLobby();else netMenu();break;
     case'pong':NET.rtt=Math.max(0,Date.now()-m.ts);NET.lag=Math.min(.12,NET.rtt/2000+.03);break;
     case'r':netRecv(m.from,m.d);break;
   }
@@ -2928,14 +2929,14 @@ function netVActs(arr){const out=[];if(!Array.isArray(arr))return out;
     out.push([k])}
   return out}
 function netRecv(from,d){
-  if(!d)return;
+  if(!d||typeof d!=='object')return;
   if(NET.m==='host'){
     if(d.k==='i'){const c=NET.cl[from];if(!c)return;let I=NET.inp[from];if(!I)I=NET.inp[from]={acts:[]};
       I.mx=netVNum(d.mx,-1,1);I.my=netVNum(d.my,-1,1);I.f=netVNum(d.f,-1e4,1e4);I.fr=d.fr?1:0;if(I.acts.length<12)for(const a of netVActs(d.a))I.acts.push(a);
       if(Number.isInteger(d.sv)&&d.sv>=-1&&d.sv<N_FIGHT)c.sv=d.sv}
     else if(d.k==='ready'){const c=NET.cl[from];if(!c||G.mode!=='between'||NET.ready[from])return;
-      if(Array.isArray(d.picks)){const lim=Math.min(8,Math.max(0,(c.f.pend||0)+1));for(const p of d.picks.slice(0,lim))if(Array.isArray(p)&&typeof p[0]==='string'&&Object.prototype.hasOwnProperty.call(UP,p[0]))applyUpgrade(c.f,p[0],1)}
-      c.f.pend=0;NET.ready[from]=true;netHostCheckNext()}
+      if(Array.isArray(d.picks)){const lim=Math.min(8,c.pk|0);for(const p of d.picks.slice(0,lim))if(Array.isArray(p)&&typeof p[0]==='string'&&Object.prototype.hasOwnProperty.call(UP,p[0])&&canTake(c.f,UP[p[0]]))applyUpgrade(c.f,p[0],1)}
+      c.f.pend=0;c.pk=0;NET.ready[from]=true;netHostCheckNext()}
     return;
   }
   if(from!==NET.hostPid)return;   // only the current host may send start / snapshots / results / drops
@@ -2986,7 +2987,7 @@ function netAct2(act,v){
     case'n_quick':netReadForm();NET.notice='';netConnect(()=>netSend({t:'quick',name:NET.name,weapon:G.pick}));break;
     case'n_create':netReadForm();NET.notice='';netConnect(()=>netSend({t:'create',name:NET.name,weapon:G.pick}));break;
     case'n_join':{netReadForm();const c=($('#nCode').value||'').trim().toUpperCase();if(c.length!==4){NET.notice='Enter the 4 letter room code.';netMenu();break}NET.notice='';netConnect(()=>netSend({t:'join',code:c,name:NET.name,weapon:G.pick}));break}
-    case'n_start':if(NET.role==='host'&&NET.players.length){NET.notice='';netSend({t:'start'});netHostStart()}break;
+    case'n_start':if(NET.role==='host'&&NET.players.length&&!NET.starting){NET.notice='';NET.starting=true;netSend({t:'start'});setTimeout(()=>{if(NET.starting){NET.starting=false;NET.notice='Start was not confirmed. Try again.';if(!NET.live&&NET.code)netLobby()}},5000)}break;
     case'n_leave':netLeave();break;
     case'n_lobby':netSend({t:'lobby'});break;
   }
@@ -3036,7 +3037,7 @@ function controlRemote(f,dt){
 function netBroadcastRes(){
   const fs=G.fighters.slice(0,N_FIGHT),fin=fs.some(f=>f.wins>=WIN_DROPS),st=fs.map(f=>[f.wins,f.pts,f.kills,f.place,f.dropKills,f.level]);
   NET.ready={};NET.betT=performance.now()+50000;
-  for(const pid in NET.cl){const f=NET.cl[pid].f;netRel(+pid,{k:'res',dn:G.dropNo,fin,w:G.winner?G.winner.id:0,st,pk:fin?0:(f.pend||0)+1})}
+  for(const pid in NET.cl){const c=NET.cl[pid],f=c.f;c.pk=fin?0:(f.pend||0)+1;netRel(+pid,{k:'res',dn:G.dropNo,fin,w:G.winner?G.winner.id:0,st,pk:fin?0:(f.pend||0)+1})}
 }
 const dropResults0=dropResults;
 dropResults=function(){
@@ -3112,7 +3113,8 @@ function netSnapFor(c){
     if(e.only&&e.only.indexOf(f.id)<0)continue;
     if(!e.all&&(e.x-cx)*(e.x-cx)+(e.y-cy)*(e.y-cy)>1500*1500)continue;E.push(e)}
   c.evi=NET.evBase+NET.ev.length;
-  return{k:'s',T:q2(G.time),m:MODEC[G.mode]||0,cd:q2(G.countdown),et:q2(G.endT),w:G.winner?G.winner.id:-1,me:[f.alive?1:0,...enc(f,FK),...enc(f,XK)],F,Z,B,O,D,E:E.length>70?E.slice(-70):E};
+  c.sq=(c.sq||0)+1;
+  return{k:'s',q:c.sq,T:q2(G.time),m:MODEC[G.mode]||0,cd:q2(G.countdown),et:q2(G.endT),w:G.winner?G.winner.id:-1,me:[f.alive?1:0,...enc(f,FK),...enc(f,XK)],F,Z,B,O,D,E:E.length>70?E.slice(-70):E};
 }
 function netHostTick(dt){
   if(!NET.live)return;
@@ -3127,9 +3129,9 @@ function netHostTick(dt){
 }
 // ---------- client ----------
 function netOnStart(d){
-  NET.m='client';NET.live=true;NET.acts=[];NET.zm.clear();NET.paused=false;NET.gotSnap=false;
+  NET.m='client';NET.live=true;NET.acts=[];NET.zm.clear();NET.paused=false;NET.gotSnap=false;NET.sq=0;
   G.debug=false;G.zmode=false;if(DIFF[d.diff])G.diff=d.diff;G.fighters=[];
-  d.ros.forEach((r,i)=>{const f=makeFighter(i,r[2]);f.name=r[1];f.pid=r[0];f.isAI=r[0]!==NET.pid;f.pend=0;f.tx=f.x;f.ty=f.y;f.tf=0;G.fighters.push(f);if(r[0]===NET.pid)NET.my=i});
+  d.ros.forEach((r,i)=>{const f=makeFighter(i,r[2]);f.name=String(r[1]==null?'Player':r[1]).replace(/[\u0000-\u001f\u007f]/g,'').slice(0,24)||'Player';f.pid=r[0];f.isAI=r[0]!==NET.pid;f.pend=0;f.tx=f.x;f.ty=f.y;f.tf=0;G.fighters.push(f);if(r[0]===NET.pid)NET.my=i});
   G.P=G.fighters[NET.my];G.P.isAI=false;G.dropNo=1;
   netApplyDrop(d.drop);
 }
@@ -3145,6 +3147,7 @@ function netApplyDrop(d){
 function netApplySnap(d){
   if(!NET.live||NET.m!=='client'||!G.P)return;
   const P=G.P,fs=G.fighters;NET.lastSnap=performance.now();NET.gotSnap=true;
+  if(typeof d.q==='number'){if(d.q<=(NET.sq||0))return;NET.sq=d.q}
   const nm=MODEN[d.m];
   if(nm&&(G.mode==='count'||G.mode==='play'||G.mode==='ending')){
     if(nm==='ending'&&G.mode!=='ending'){G.winner=fs[d.w]||null;SFX.sting(d.w===NET.my)}
