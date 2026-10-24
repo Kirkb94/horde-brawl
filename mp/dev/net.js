@@ -33,9 +33,9 @@ function netConnect(then){
   ws.onerror=()=>{};
 }
 setInterval(()=>{if(NET.ws&&NET.ws.readyState===1)netSend({t:'ping',ts:Date.now()})},3000);
-// Silence watchdog: the server answers every ping, so 30s without any message means the link is dead.
-const NET_SILENCE_MS=30000;
-setInterval(()=>{if(NET.ws&&NET.ws.readyState===1&&!document.hidden&&NET.lastMsg&&Date.now()-NET.lastMsg>NET_SILENCE_MS)netDropped('Connection lost: the server stopped responding (no data for 30 seconds).')},1000);
+// Silence watchdog: the server answers every ping, so 12s without any message means the link is dead.
+const NET_SILENCE_MS=12000;
+setInterval(()=>{if(NET.ws&&NET.ws.readyState===1&&!document.hidden&&NET.lastMsg&&Date.now()-NET.lastMsg>NET_SILENCE_MS)netDropped('Connection lost: the server stopped responding (no data for 12 seconds).')},1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)NET.lastMsg=Date.now()});
 function netCleanup(){NET.live=false;NET.m=null;NET.paused=false;NET.zm.clear();NET.inp={};NET.cl={};NET.ready={};NET.acts=[];G.fighters=[];G.P=null;G.bullets=[];G.deploys=[];G.orbs=[];G.fx=[];G.spectating=false;G.pOut=false;G.mode='menu';showHUD(false)}
 function netDropped(msg){
@@ -143,7 +143,7 @@ function netMenu(){
   let srv='';try{srv=localStorage.getItem('hordeserver')||''}catch(e){}
   show(`<p class="eyebrow">Online · up to 16 players</p><h1>Horde <em>Duel</em></h1>
   ${NET.notice?`<p class="lede" style="color:var(--foe)">${esc(NET.notice)}</p>`:''}${NET.status?`<p class="lede">${esc(NET.status)}</p>`:''}
-  <div class="group"><span class="glabel">Your name</span><input class="nin" id="nName" maxlength="14" placeholder="Player" value="${esc(NET.name)}" autocomplete="off"></div>
+  <div class="group"><span class="glabel">Your name</span><input class="nin" id="nName" maxlength="16" placeholder="Player" value="${esc(NET.name)}" autocomplete="off"></div>
   <div class="group"><span class="glabel">Choose your character</span>${wepGrid()}</div>
   <button class="go" data-act="n_quick">Quick play</button>
   <button class="go ghost" data-act="n_create">Create a room</button>
@@ -153,7 +153,7 @@ function netMenu(){
 }
 function netReadForm(){
   const n=$('#nName'),s=$('#nSrv');
-  if(n){NET.name=n.value.replace(/[^\w \-.!?]/g,'').trim().slice(0,14);try{localStorage.setItem('hordename',NET.name)}catch(e){}}
+  if(n){NET.name=n.value.replace(/[^\w \-.!?]/g,'').trim().slice(0,16);try{localStorage.setItem('hordename',NET.name)}catch(e){}}
   if(s){try{localStorage.setItem('hordeserver',s.value.trim())}catch(e){}}
 }
 function netLobby(){
@@ -408,7 +408,7 @@ function netReplay(e){
       if(o.kind==='death')o.col=o.who===NET.my?COL.you:COL.foe;
       if(o.kind==='splat')break;
       G.fx.push(o);break}
-    case'f':feedAdd(e.m,!!(P&&e.m.indexOf(P.name)>=0));break;
+    case'f':{const fm=String(e.m==null?'':e.m);feedAdd(fm,!!(P&&fm.indexOf(P.name)>=0))}break;
     case'n':{const t=fById(e.t);if(!t)break;const mine=e.t===NET.my;addNum(t,e.v,mine?COL.foe:COL.you);break}
     case'k':{const f=fById(e.id);if(!f)break;f.alive=false;f.place=e.pl;
       if(e.id===NET.my){G.spectating=true;G.pOut=true;G.elimT=1.7;try{navigator.vibrate&&navigator.vibrate([40,40,80])}catch(_){}}break}

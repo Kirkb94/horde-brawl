@@ -570,7 +570,7 @@ html[data-plat=phone] #panel:has(#bpAbTop) > .group:has(#bpHero) > #bpHero{order
 html[data-plat=phone] #panel:has(#bpAbTop) > .group:has(#bpHero) > .glabel::after{content:"  ·  swipe for more  ›";color:var(--lav2);opacity:.8}
 html[data-plat=phone] #bpHero:not(.gopen) .bpHG{display:none}
 html[data-plat=phone] #bpHGTog{display:flex;align-self:flex-start;margin:2px 0 0;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.04);color:var(--ink);font:800 11px Rubik,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
-html[data-plat=phone] #panel:has(#bpAbTop) .pfoot{padding:22px 20px 8px;margin-bottom:-22px}
+html[data-plat=phone] #panel:has(#bpAbTop) .pfoot{position:static;padding:14px 20px 22px;margin:0}
 html[data-plat=phone] #panel:has(#bpAbTop) .pfoot .go{padding:9px 14px;font-size:15px}
 }
 #bpHGTog{display:none}
@@ -706,7 +706,7 @@ const CHARS={
   carbine:{spd:1.0,hpMax:160,name:'Argus',role:'Spotter',ab:'Thermal Scan',btn:'SCAN',cd:17,desc:'A pulse tags every foe within 650 units for 4.5s. You and your ally see them through walls, colored by health. Tagged foes take 25% more from your carbine'},
   scorch:{spd:.94,hpMax:240,name:'Halcyon',role:'Protector',ab:'Bubble Bay',btn:'DOME',cd:22,desc:'Drop a dome that fits about five fighters. It blocks every shot in both directions for 8s or 500 damage, but never blocks movement'},
   sword:{spd:1.35,hpMax:160,name:'Sabre',role:'Duelist',ab:'Lunge',btn:'LUNGE',cd:7,desc:'Dashes through the nearest foe within 380 units and lands on the far side, dealing three slashes of damage in one pass and leaving a swipe. Nothing can hit you mid-lunge'},
-  hammer:{spd:1.0,hpMax:250,name:'Anvil',role:'Juggernaut',ab:'Leap Slam',btn:'LEAP',cd:9,desc:'Hurl yourself into the air toward your aim and crash down: 40 damage and a heavy slow where you land. You fly over walls and nothing can hit you in the air'},
+  hammer:{spd:1.0,hpMax:250,name:'Anvil',role:'Juggernaut',ab:'Leap Slam',btn:'LEAP',cd:9,desc:'Hurl yourself into the air toward your aim and crash down: 40 damage and a heavy slow where you land, and zombies there are stunned for 1.2s. You fly over walls and nothing can hit you in the air'},
   necro:{spd:.95,hpMax:170,name:'Mortis',role:'Summoner',ab:'Raise Walkers',btn:'RAISE',cd:7,desc:'Raise three walkers from the ground that fight for you for 40s. Up to 5 can follow you at once'}
 };
 // ================= HORDE BRAWL · kit table =================
@@ -724,7 +724,7 @@ const KIT={
   carbine:{sk:'Paint',skB:'PAINT',skCd:8,skD:'Marks the first foe in your sights: they take 30% more from everyone for 5s',ult:'Uplink',ultD:'Locks onto every enemy hero on the map and warns them. 1.5s later it strikes each one for 55 (a dash dodges it), roots them for 1s and marks them for 20s: they show on your team\'s map and take double damage from you'},
   scorch:{sk:'Backdraft',skB:'PULL',skCd:10,skD:'Drags foes within 300 toward you and sets them ablaze',ult:'Sanctuary',ultD:'A tougher dome that heals you and allies inside 14 HP a second'},
   sword:{sk:'Parry',skB:'PARRY',skCd:7,skD:'For 0.7s every shot that hits you flies back at the shooter',ult:'Thousand Cuts',ultD:'Blink through up to six nearby foes, 45 damage each'},
-  hammer:{sk:'Shockwave',skB:'QUAKE',skCd:15,skD:'Slam the ground and send a narrow shockwave rolling out in front of you. Foes in its path are rooted for 2s the moment you cast, then take 20 damage and are stunned for 2s when it reaches them',ult:'Unbound',ultD:'For 10s you glow with power and your max health becomes 1000, filled to the top. When it ends you drop back to your normal max'},
+  hammer:{sk:'Shockwave',skB:'QUAKE',skCd:15,skD:'Slam the ground and send a narrow shockwave rolling out in front of you. Foes in its path are rooted for 2s the moment you cast, then take 20 damage and are stunned for 2s when it reaches them. Against zombies it fans out wide and stuns the whole crowd',ult:'Unbound',ultD:'For 10s you glow with power and your max health becomes 1000, filled to the top. When it ends you drop back to your normal max'},
   necro:{sk:'Grave Hover',skB:'HOVER',skCd:12,skD:'Rise above the battlefield for up to 3s: you are rooted and untouchable and see much farther. Press E again, or wait, to swoop down where you aim (up to 600 away) and raise a pack of 4 crawlers',ult:'Raise Dead',ultD:'Raise a Matriarch at your aim point. She fights for you for 30s, and spiders crawl out of her, up to 40 at once'}
 };
 // the Tide: all numbers for the zombie zone live here
@@ -2890,7 +2890,7 @@ function hamHit(f,mul){
     const dx=t.x-cx,dy=t.y-cy,d=Math.hypot(dx,dy);if(d>R+t.r)continue;
     const ex=t.x-f.x,ey=t.y-f.y,ed=Math.hypot(ex,ey);if(ed>t.r+f.r&&rayCast(f.x,f.y,Math.atan2(ey,ex),ed)<ed-t.r)continue;
     damage(t,dmg,f,{x:f.x,y:f.y,vx:ex,vy:ey,expl:0});
-    if(t.alive){t.kbx=clamp(t.kbx+ex/(ed||1)*140,-520,520);t.kby=clamp(t.kby+ey/(ed||1)*140,-520,520);if(fx.hcrack){t.slowT=Math.max(t.slowT||0,1);t.slowAmt=Math.max(t.slowAmt||0,.3)}}
+    if(t.alive){t.kbx=clamp(t.kbx+ex/(ed||1)*140,-520,520);t.kby=clamp(t.kby+ey/(ed||1)*140,-520,520);if(fx.hcrack){t.slowT=Math.max(t.slowT||0,1);t.slowAmt=Math.max(t.slowAmt||0,.3)}if(t.zomb)hamZStun(t,HAMZ.slam)}
   }
   G.fx.push({kind:'hslam',x:cx,y:cy,r:R,a,age:0,life:.45});G.fx.push({kind:'hmark',x:cx,y:cy,r:R,a:Math.random()*TAU,age:0,life:10,seed:Math.random()*1e4});
   if(near(cx,cy)){burst(cx,cy,'#c9d2e3',10,220);burst(cx,cy,CPAL.hammer.acc,6,160);SFX.thwack(cx,cy)}
@@ -2903,18 +2903,21 @@ function hamLand(f){
     const dx=t.x-f.x,dy=t.y-f.y,d=Math.hypot(dx,dy);if(d>R+t.r)continue;
     if(d>t.r+f.r&&!losClear(f.x,f.y,t.x,t.y))continue;
     damage(t,dmg,f,{x:f.x,y:f.y,vx:dx,vy:dy,expl:0});
-    if(t.alive){t.slowT=Math.max(t.slowT||0,1.2);t.slowAmt=Math.max(t.slowAmt||0,.45);t.kbx=clamp(t.kbx+dx/(d||1)*260,-520,520);t.kby=clamp(t.kby+dy/(d||1)*260,-520,520)}
+    if(t.alive){t.slowT=Math.max(t.slowT||0,1.2);t.slowAmt=Math.max(t.slowAmt||0,.45);t.kbx=clamp(t.kbx+dx/(d||1)*260,-520,520);t.kby=clamp(t.kby+dy/(d||1)*260,-520,520);if(t.zomb)hamZStun(t,HAMZ.land)}
   }
   G.fx.push({kind:'hslam',x:f.x,y:f.y,r:R,a:f.facing,age:0,life:.6,big:1});G.fx.push({kind:'hmark',x:f.x,y:f.y,r:R*.8,a:Math.random()*TAU,age:0,life:10,seed:Math.random()*1e4,big:1});
   if(near(f.x,f.y)){G.fx.push({kind:'ring',x:f.x,y:f.y,age:0,life:.45,r:R,col:CPAL.hammer.acc});burst(f.x,f.y,'#c9d2e3',22,320);SFX.thwack(f.x,f.y);SFX.boom(f.x,f.y,Math.min(120,R))}
   noise(f.x,f.y,700);
 }
-// Shockwave: rolls outward in a 110 degree arc and stuns whatever it reaches
-const HWAVE={R:420,arc:27.5,life:.45,stun:2,root:2,bossStun:1.5,dmg:20};
+// Anvil vs the horde: every smash stuns the zombies it hits (bosses and the Tyrant for half as long)
+const HAMZ={slam:.5,land:1.2};
+function hamZStun(z,t){if(z.zk==='boss'||z.zk==='tyrant')t*=.5;z.stunT=Math.max(z.stunT||0,t);z.mv={x:0,y:0};z.dashT=0;if(near(z.x,z.y))G.fx.push({kind:'ring',x:z.x,y:z.y,age:0,life:.3,r:24,col:'#ffd24a'})}
+// Shockwave: rolls outward in a narrow 27.5 degree arc against heroes, fanning out to 110 degrees against zombies, and stuns whatever it reaches
+const HWAVE={R:420,arc:27.5,zarc:110,life:.45,stun:2,root:2,bossStun:1.5,dmg:20};
 function hwaveUse(f){
   const p=f.tgtPt,a=p?Math.atan2(p.y-f.y,p.x-f.x):f.facing;f.facing=a;
-  if(f===G.P)VOICE.say('quake_use',{pri:1,cd:2});for(const e of G.fighters){if(!foeOf(f,e)||e.jumpT>0||e.inv>0)continue;const dx=e.x-f.x,dy=e.y-f.y,dd=Math.hypot(dx,dy);if(dd>HWAVE.R+e.r)continue;if(dd>e.r&&Math.abs(angDiff(a,Math.atan2(dy,dx)))>rad(HWAVE.arc)/2+Math.atan2(e.r,Math.max(dd,1)))continue;if(!losClear(f.x,f.y,e.x,e.y))continue;e.rootT=Math.max(e.rootT||0,HWAVE.root);e.mv={x:0,y:0};e.dashT=0;if(e===G.P)feedAdd('Rooted!',true)}
-  G.deploys.push({kind:'hwave',x:f.x,y:f.y,ang:a,arc:rad(HWAVE.arc),R:HWAVE.R,t:0,life:HWAVE.life,owner:f,hit:[]});
+  if(f===G.P)VOICE.say('quake_use',{pri:1,cd:2});for(const e of G.fighters){if(!foeOf(f,e)||e.jumpT>0||e.inv>0)continue;const dx=e.x-f.x,dy=e.y-f.y,dd=Math.hypot(dx,dy);if(dd>HWAVE.R+e.r)continue;if(dd>e.r&&Math.abs(angDiff(a,Math.atan2(dy,dx)))>rad(e.zomb?HWAVE.zarc:HWAVE.arc)/2+Math.atan2(e.r,Math.max(dd,1)))continue;if(!losClear(f.x,f.y,e.x,e.y))continue;e.rootT=Math.max(e.rootT||0,HWAVE.root);e.mv={x:0,y:0};e.dashT=0;if(e===G.P)feedAdd('Rooted!',true)}
+  G.deploys.push({kind:'hwave',x:f.x,y:f.y,ang:a,arc:rad(HWAVE.arc),zarc:rad(HWAVE.zarc),R:HWAVE.R,t:0,life:HWAVE.life,owner:f,hit:[]});
   if(near(f.x,f.y)){burst(f.x,f.y,'#c9d2e3',14,260);SFX.thwack(f.x,f.y);SFX.boom(f.x,f.y,70)}
   return true;
 }
@@ -2923,7 +2926,7 @@ function hwaveStep(d,dt){
   if(d.t<=d.life&&f)for(const e of G.fighters){
     if(d.hit.includes(e)||!foeOf(f,e)||e.jumpT>0)continue;
     const dx=e.x-d.x,dy=e.y-d.y,dd=Math.hypot(dx,dy);if(dd>r+e.r)continue;
-    if(dd>e.r&&Math.abs(angDiff(d.ang,Math.atan2(dy,dx)))>d.arc/2+Math.atan2(e.r,Math.max(dd,1)))continue;
+    if(dd>e.r&&Math.abs(angDiff(d.ang,Math.atan2(dy,dx)))>(e.zomb?(d.zarc||d.arc):d.arc)/2+Math.atan2(e.r,Math.max(dd,1)))continue;
     if(!losClear(d.x,d.y,e.x,e.y))continue;
     d.hit.push(e);
     const boss=e.zomb&&(e.zk==='boss'||e.zk==='tyrant');
@@ -2939,6 +2942,7 @@ function drawHwave(d){
   const q=clamp(d.t/d.life,0,1),r=d.R*q,fade=d.t>d.life?1-(d.t-d.life)/.3:1;if(fade<=0)return;
   const a0=d.ang-d.arc/2,a1=d.ang+d.arc/2,col=CPAL.hammer.acc;
   ctx.save();ctx.globalAlpha=fade;
+  if(d.zarc){const z0=d.ang-d.zarc/2,z1=d.ang+d.zarc/2;ctx.fillStyle=rgba(col,.05);ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.arc(d.x,d.y,Math.max(1,r),z0,z1);ctx.closePath();ctx.fill();ctx.strokeStyle=rgba(col,.35);ctx.lineWidth=3;ctx.beginPath();ctx.arc(d.x,d.y,Math.max(1,r),z0,z1);ctx.stroke()}
   ctx.fillStyle=rgba(col,.10);ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.arc(d.x,d.y,Math.max(1,r),a0,a1);ctx.closePath();ctx.fill();
   ctx.lineCap='round';
   ctx.strokeStyle=rgba('#ffffff',.85);ctx.lineWidth=6;ctx.beginPath();ctx.arc(d.x,d.y,Math.max(1,r),a0,a1);ctx.stroke();

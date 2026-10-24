@@ -43,6 +43,7 @@ const LONG_CACHE = new Set(['.mp3', '.ogg', '.wav', '.jpg', '.jpeg', '.webp', '.
 
 const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.json', '.svg']);
 const gzCache = new Map();   // full path -> { etag, buf }
+const gzPending = new Map();   // full path|etag -> [callbacks] for a compression already running
 const STATS_LIMIT = 20, STATS_WINDOW = 60000;   // /stats requests per IP per minute
 const statsHits = new Map();   // ip -> { n, t }
 setInterval(() => { const now = Date.now(); for (const [k, v] of statsHits) if (now - v.t > STATS_WINDOW) statsHits.delete(k); }, STATS_WINDOW).unref();
@@ -97,12 +98,23 @@ const server = http.createServer((req, res) => {
         res.end(isHead ? undefined : buf);
       };
       if (hit && hit.etag === etag) return send200(hit.buf);
-      return fs.readFile(full, (e2, data) => {
+      const finish = (e2, buf, data) => {
         if (e2) { res.writeHead(500, { 'Content-Type': 'text/plain' }); return res.end(); }
+        if (!buf) { res.writeHead(200, Object.assign({}, baseHeaders, { 'Content-Length': data.length })); return res.end(isHead ? undefined : data); }
+        send200(buf);
+      };
+      const pkey = full + '|' + etag;
+      const waiters = gzPending.get(pkey);
+      if (waiters) { waiters.push(finish); return; }
+      const list = [finish];
+      gzPending.set(pkey, list);
+      const flush = (e2, buf, data) => { gzPending.delete(pkey); for (const f of list) { try { f(e2, buf, data); } catch (e) {} } };
+      return fs.readFile(full, (e2, data) => {
+        if (e2) return flush(e2);
         zlib.gzip(data, { level: 9 }, (e3, buf) => {
-          if (e3) { res.writeHead(200, Object.assign({}, baseHeaders, { 'Content-Length': data.length })); return res.end(isHead ? undefined : data); }
+          if (e3) return flush(null, null, data);
           gzCache.set(full, { etag, buf });
-          send200(buf);
+          flush(null, buf, data);
         });
       });
     }
@@ -169,11 +181,12 @@ function safeSend(ws, str, skipSlow) {
     if (!ws || ws.readyState !== 1) return false;
     if (skipSlow && ws.bufferedAmount > BUF_LIMIT) return false;
     ws.send(str); return true;
-  } catch (e) { return false; }
+  } catch (e) { try { ws.terminate(); } catch (e2) {} return false; }
 }
+// No I, O or Q: they get confused with 1 and 0 when read aloud or typed.
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPRSTUVWXYZ';   // 23 letters -> 23**4 = 279841 codes
 function newCode() {
-  // No I, O or Q: they get confused with 1 and 0 when read aloud or typed.
-  const A = 'ABCDEFGHJKLMNPRSTUVWXYZ';
+  const A = CODE_ALPHABET;
   const rnd = require('crypto').randomInt;
   for (let k = 0; k < 200; k++) {
     let c = ''; for (let i = 0; i < 4; i++) c += A[rnd(A.length)];
@@ -196,7 +209,7 @@ function roomOpenError(ws) {
   if (rooms.size - (freed ? 1 : 0) >= MAX_ROOMS) return 'Server is busy, try again in a minute.';
   const mine = roomsOfIp(ws.ip) - (freed && freed.ip === ws.ip ? 1 : 0);
   if (mine >= MAX_ROOMS_PER_IP) return 'You already have ' + MAX_ROOMS_PER_IP + ' open rooms. Close one or join an existing room.';
-  if (rooms.size - (freed ? 1 : 0) >= 36 ** 4) return 'No room codes free.';
+  if (rooms.size - (freed ? 1 : 0) >= CODE_ALPHABET.length ** 4) return 'No room codes free.';
   return null;
 }
 function bcastPlayers(room) {
@@ -251,12 +264,13 @@ function leaveRoom(ws) {
     }
     const aborted = room.started;
     room.host = next.pid; room.started = false;
+    if (next.ws && next.ws.ip) room.ip = next.ws.ip;
     for (const q of room.players.values()) send(q.ws, { t: 'hostleft', host: next.pid, name: next.name, aborted });
     bcastPlayers(room);
     return;
   }
   const h = room.players.get(room.host);
-  if (h) send(h.ws, { t: 'left', pid: p.pid });
+  if (h && h.ws && h.ws.readyState === 1) send(h.ws, { t: 'left', pid: p.pid });
   const live = [...room.players.values()].some(q => q.ws && q.ws.readyState === 1);
   if (!room.players.size || !live) {
     for (const q of room.players.values()) { if (q.ws) { q.ws.room = null; q.ws.p = null; } }
@@ -267,14 +281,20 @@ function leaveRoom(ws) {
 
 const MAX_CONN_PER_IP = Math.max(1, parseInt(process.env.MAX_CONN_PER_IP, 10) || 8);
 const ipConns = new Map();
-const XFF_FROM_RIGHT = Math.max(0, parseInt(process.env.XFF_FROM_RIGHT, 10) || 0);   // 0 = first entry; 1 = last entry (set if the proxy appends the real IP)
+const XFF_FROM_RIGHT = (() => { const v = parseInt(process.env.XFF_FROM_RIGHT, 10); return isNaN(v) ? 1 : Math.max(0, v); })();   // proxies in front (Render = 1): Nth entry from the right; 0 = ignore header, use socket address
 const clientIp = (req) => {
   const parts = String((req.headers && req.headers['x-forwarded-for']) || '').split(',').map((s) => s.trim()).filter(Boolean);
-  const pick = parts.length ? (XFF_FROM_RIGHT ? parts[Math.max(0, parts.length - XFF_FROM_RIGHT)] : parts[0]) : '';
-  return String(pick || (req.socket && req.socket.remoteAddress) || 'unknown').slice(0, 64);
+  const pick = (XFF_FROM_RIGHT && parts.length) ? parts[Math.max(0, parts.length - XFF_FROM_RIGHT)] : '';
+  return String(pick || (req.socket && req.socket.remoteAddress) || 'unknown').replace(/^::ffff:/, '').slice(0, 64);
 };
 
 wss.on('connection', (ws, req) => {
+  if (shuttingDown) {
+    ws.on('error', () => {});
+    send(ws, { t: 'closed', reason: 'Server is restarting - please create or join a room again in a moment.' });
+    try { ws.close(1001, 'server restarting'); } catch (e) {}
+    return;
+  }
   const ip = clientIp(req);
   const isLoopback = !(req.headers && req.headers['x-forwarded-for']) && /^(127\.0\.0\.1|::1|::ffff:127\.0\.0\.1)$/.test(ip);
   if (!isLoopback && (ipConns.get(ip) || 0) >= MAX_CONN_PER_IP) {
@@ -304,18 +324,31 @@ wss.on('connection', (ws, req) => {
     if (ws.relHot) { if (++ws.relSecs >= 10) { try { ws.terminate(); } catch (e) {} return; } } else ws.relSecs = 0;   // sustained relay flood: drop the socket
     ws.relHot = false;
     ws.struck = false; ws.msgs = 0; ws.rel = 0;
-    if (ws.bad > 0 && ++ws.badClean >= 30) { ws.bad = 0; ws.badClean = 0; }
+    if (ws.bad > 0 && ++ws.badClean >= 10) { ws.bad = 0; ws.badClean = 0; }
   }, 1000);
   const badFrame = (why) => {
+    if (ws.badClosed) return;
     ws.bad++; ws.badClean = 0;
     if (ws.bad >= 5) {
+      ws.badClosed = true;
       console.log('closing bad-frame client ' + ws.ip + ' (' + why + ')');
       send(ws, { t: 'err', msg: 'Disconnected: invalid data sent to the server.' });
       try { ws.close(1003, 'Invalid data'); } catch (e) {}
     } else send(ws, { t: 'err', msg: 'Invalid message ignored.' });
   };
-  ws.on('message', (raw, isBinary) => { try { onMessage(raw); } catch (e) { console.error('[message handler]', e && e.stack || e); } });
-  const onMessage = (raw) => {
+  ws.on('message', (raw, isBinary) => { try { onMessage(raw, isBinary); } catch (e) { console.error('[message handler]', e && e.stack || e); } });
+  const relStrike = (why) => {                        // shares the flood-guard strike counter: warn twice, then disconnect
+    if (ws.struck) return;
+    ws.struck = true; ws.strikes++;
+    console.log('relay strike ' + ws.strikes + '/3 (' + why + ') from ' + ws.ip);
+    if (ws.strikes >= 3) {
+      try { send(ws, { t: 'err', msg: 'Disconnected: flooding the server.' }); } catch (e) {}
+      try { ws.terminate(); } catch (e) {}
+    } else {
+      try { send(ws, { t: 'err', msg: 'Slow down - sending too fast.' }); } catch (e) {}
+    }
+  };
+  const onMessage = (raw, isBinary) => {
     if (++ws.msgs > 700) {                            // flood guard: counted strikes, then terminate
       if (ws.msgs > 5000) {                           // extreme burst: no more strikes, cut it off now
         console.log('flood burst terminate from ' + ws.ip);
@@ -381,9 +414,15 @@ wss.on('connection', (ws, req) => {
       }
       case 'upd': {
         if (!room || !p) return noRoom(ws);
-        if (room.started) return bcastPlayers(room);   // names/heroes are locked mid-match so fighters can't desync
+        if (room.started) {                            // names/heroes are locked once the match is starting or running so fighters can't desync
+          send(ws, { t: 'err', msg: 'Name and hero are locked once the match starts.' });
+          return send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });   // resync sender only
+        }
         const nm = typeof m.name === 'string' ? clean(m.name, 16) : '';
-        if (nm) p.name = uniqueName({ players: new Map([...room.players].filter(([k]) => k !== p.pid)) }, nm);   // empty/invalid names are ignored
+        if (nm) {                                      // empty/invalid names are ignored
+          const others = new Map([...room.players].filter(([k]) => k !== p.pid));
+          p.name = uniqueName({ players: others }, nm);
+        }
         if (typeof m.weapon === 'string' && WEAPONS.includes(m.weapon)) p.weapon = m.weapon;
         return bcastPlayers(room);
       }
@@ -392,24 +431,40 @@ wss.on('connection', (ws, req) => {
           send(ws, { t: 'err', msg: 'Need another player to start a match.' });
           send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });
         }
-        else if (p.pid === room.host && !room.started) { room.started = true; bcastPlayers(room); }
+        else if (p.pid === room.host && !room.started && [...room.players.values()].some(q => !q.ws || q.ws.readyState !== 1)) {
+          send(ws, { t: 'err', msg: 'A player is disconnecting. Wait a moment and try again.' });
+          send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });
+        }
+        else if (p.pid === room.host && !room.started) {
+          let bad = null;
+          for (const q of room.players.values()) if (q.ws && q.ws.readyState > 1) { bad = q; break; }   // 2 = CLOSING, 3 = CLOSED
+          if (bad) {
+            send(ws, { t: 'err', msg: 'Can\'t start: ' + (bad.name || 'a player') + '\'s connection is closing. Try again in a moment.' });
+            send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });
+          } else { room.started = true; bcastPlayers(room); }
+        }
         else {
           if (p.pid !== room.host) send(ws, { t: 'err', msg: 'Only the host can start the match.' });
           send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });   // duplicate or non-host start: resync sender only
         }
         return;
       case 'lobby': if (!room || !p) return noRoom(ws);
-        if (p.pid === room.host) { room.started = false; bcastPlayers(room); }   // host lobby always clears a stale started flag and tells everyone
+        if (p.pid === room.host) {
+          room.started = false;                        // host lobby always clears a stale started flag
+          for (const q of room.players.values()) { if (q && q.ws) { q.ws.rel = 0; q.ws.relHot = false; q.ws.relSecs = 0; } }   // old match traffic must not count against the next one
+          bcastPlayers(room);                          // tell everyone, started:false
+        }
         else send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });   // no-op lobby: resync sender only
         return;
       case 'leave': return leaveRoom(ws);
       case 'r': {                                      // relay: client -> host, host -> peer or everyone
         if (!room || !p) return noRoom(ws);
-        if (raw.length > (p.pid === room.host ? HOST_RELAY_MAX : CLIENT_RELAY_MAX)) return;   // oversize relay payload
-        if (p.pid !== room.host && ++ws.rel > CLIENT_RELAY_RATE) { ws.relHot = true; return; }   // relay flood: drop extras, remember the offence
+        if (raw.length > (p.pid === room.host ? HOST_RELAY_MAX : CLIENT_RELAY_MAX)) { if (p.pid !== room.host) relStrike('oversize relay'); return; }   // oversize relay payload
+        if (p.pid !== room.host && ++ws.rel > CLIENT_RELAY_RATE) { ws.relHot = true; if (ws.rel > 300) relStrike('relay flood'); return; }   // relay flood: drop extras, remember the offence
         if (!m.d || typeof m.d !== 'object' || Array.isArray(m.d)) return;                   // 'd' must be an object
         if (p.pid === room.host && m.to !== '*' && (m.to === p.pid || !room.players.has(m.to))) return;   // host target must exist
         if (p.pid === room.host) {
+          if (!room.started) return;                   // no host relay while in the lobby: stale snapshots from an aborted match
           if (m.to === '*') { const out = JSON.stringify({ t: 'r', from: p.pid, d: m.d }); const snap = m.d.k === 's'; for (const q of room.players.values()) if (q !== p) safeSend(q.ws, out, snap); }   // only stale snapshots are dropped for slow links
           else { const q = room.players.get(m.to); if (q) {
             safeSend(q.ws, JSON.stringify({ t: 'r', from: p.pid, d: m.d }), m.d.k === 's'); } }   // drop stale snapshots for slow links
@@ -444,7 +499,7 @@ setInterval(() => {
       for (const q of r.players.values()) {
         const w = q && q.ws;
         if (!w) continue;
-        w.room = null; w.p = null;
+        if (w.room === r) { w.room = null; w.p = null; }
         if (w.readyState === 1) {
           send(w, { t: 'closed', reason: 'Room closed after 6 hours of inactivity.' });
           try { w.close(1000, 'room closed'); } catch (e) {}
@@ -456,7 +511,19 @@ setInterval(() => {
 
 // ---- process safety + graceful shutdown ----
 let shuttingDown = false;
+let graceStarted = false;
 function shutdown(reason, code) {
+  if (graceStarted || shuttingDown) return;
+  graceStarted = true;
+  console.log('Shutdown requested: ' + reason + ' (grace period)');
+  try { server.close(); } catch (e) {}   // stop accepting new connections first
+  try { if (server.closeIdleConnections) server.closeIdleConnections(); } catch (e) {}
+  for (const ws of wss.clients) {
+    try { send(ws, { t: 'closed', restarting: true, reason: 'Server restarting for an update - your match was ended. Please create or join a room again in a moment.' }); } catch (e) {}
+  }
+  setTimeout(() => finishShutdown(reason, code), 1500);
+}
+function finishShutdown(reason, code) {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log('Shutting down: ' + reason);

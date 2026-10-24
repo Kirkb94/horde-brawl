@@ -27,10 +27,10 @@ function netConnect(then){
   if(NET.ws&&NET.ws.readyState===0)return;
   NET.status='Connecting… the free server can take up to a minute to wake up';netMenu();
   let ws;try{ws=new WebSocket(netUrl())}catch(e){NET.status='';NET.notice='That server address is not valid.';netMenu();return}
-  NET.ws=ws;const to=setTimeout(()=>{if(ws.readyState===0){try{ws.close()}catch(_){}}},90000);
-  ws.onopen=()=>{clearTimeout(to);NET.status='';then()};
+  NET.ws=ws;let failed=false,opened=false;const to=setTimeout(()=>{if(ws.readyState===0){failed=true;try{ws.close()}catch(_){}}},90000);
+  ws.onopen=()=>{opened=true;clearTimeout(to);NET.status='';then()};
   ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return}netMsg(m)};
-  ws.onclose=()=>{clearTimeout(to);if(NET.ws===ws){NET.ws=null;netDropped(NET.status||NET.code||NET.live?'Lost connection to the server.':'Could not reach the server. Check the address under Server.')}};
+  ws.onclose=()=>{clearTimeout(to);if(NET.ws===ws){NET.ws=null;netDropped(failed?'Could not reach server (no answer in 90 seconds). Check the address under Server or try again.':(opened||NET.code||NET.live)?'Lost connection to the server.':'Could not reach the server. Check the address under Server.')}};
   ws.onerror=()=>{};
 }
 setInterval(()=>{if(NET.ws&&NET.ws.readyState===1)netSend({t:'ping',ts:Date.now()})},3000);

@@ -69,7 +69,7 @@ const server = http.createServer((req, res) => {
   }
   if (url === '/healthz') { res.writeHead(200, { 'Content-Type': 'text/plain' }); return res.end('ok'); }
   if (url === '/stats') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, SEC_HEADERS));
     return res.end(JSON.stringify({ mode: MODE, rooms: rooms.size, matches: [...rooms.values()].filter(r => r.sim).length, players: [...rooms.values()].reduce((n, r) => n + r.players.size, 0),
       tickMsAvg: perf.ticks ? +(perf.ms / perf.ticks).toFixed(2) : 0, tickMsMax: +perf.max.toFixed(1), simErrors: perf.errors, simAborts: perf.aborts,
       dropped: Object.assign({}, dropStats, { roomsThrottled: [...rooms.values()].filter(r => r.dropped > 0).length }) }));
@@ -486,9 +486,13 @@ function leaveRoom(ws, hold) {
   }
   if (p.pid === room.host) {
     if (!room.started && room.players.size) {   // relay lobby: no sim running yet, hand the room to the next player
-      room.host = nextHost(room);
-      balanceTeams(room); bcastPlayers(room);
-      return;
+      const nh = nextHost(room), np = room.players.get(nh);
+      if (np && np.ws && np.ws.readyState === 1) {   // only an open socket may become host
+        room.host = nh;
+        balanceTeams(room); bcastPlayers(room);
+        return;
+      }
+      // everyone left is on a closing socket: fall through and close the room
     }
     if (hold && p.token && room.started) {   // relay host dropped mid-match: hold the room so they can rejoin
       room.held.set(p.token, { p, timer: setTimeout(() => expireHold(room, p.token), HOLD_MS) });
@@ -552,7 +556,7 @@ wss.on('connection', (ws, req) => {
     if (ws.abusive) return;
     if (++ws.msgs > 700) { noteDrop(ws, 'rate'); return; }                      // flood guard
     let m; try { m = JSON.parse(raw); } catch (e) { noteDrop(ws, 'client'); return; }
-    if (!m || typeof m.t !== 'string') { noteDrop(ws, 'client'); return; }
+    if (!m || typeof m !== 'object' || Array.isArray(m) || typeof m.t !== 'string') { noteDrop(ws, 'client'); return; }
     if (!msgAllowed(ws, m, raw.length)) return;
     const v = validateMsg(m);                         // strict per-type schema check
     if (!v.ok) {
@@ -570,7 +574,9 @@ wss.on('connection', (ws, req) => {
         if (roomLimited(ws)) return;
         const code = newCode(); if (!code || rooms.has(code)) return serverFull(ws);
         const r = { code, players: new Map(), held: new Map(), host: 0, started: false, created: Date.now(), auth: MODE === 'auth', sim: null, cfg: newCfg() };
-        rooms.set(code, r); return joinRoom(ws, r, m.name, m.weapon);
+        rooms.set(code, r); joinRoom(ws, r, m.name, m.weapon);
+        if (!r.players.size) rooms.delete(code);   // never leave an empty room holding a slot
+        return;
       }
       case 'join': {
         const r = rooms.get(clean(m.code, 4).toUpperCase());
@@ -589,7 +595,9 @@ wss.on('connection', (ws, req) => {
           const code = newCode(); if (!code || rooms.has(code)) return serverFull(ws);
           best = { code, players: new Map(), held: new Map(), host: 0, started: false, created: Date.now(), auth: MODE === 'auth', sim: null, cfg: newCfg() }; rooms.set(code, best);
         }
-        return joinRoom(ws, best, m.name, m.weapon);
+        joinRoom(ws, best, m.name, m.weapon);
+        if (!best.players.size) rooms.delete(best.code);
+        return;
       }
       case 'cfg': {
         if (!room || !p || p.pid !== room.host || room.started) return;
