@@ -100,8 +100,10 @@ test('after the host hold expires the interim host keeps host and the old host c
   const e = await h2.waitFor('err', 3000);
   assert.equal(e.rejoin, false);
   guest.queue.length = 0;
-  guest.send({ t: 'upd', weapon: 'rifle' });   // forces a players broadcast
-  const m = await guest.waitFor('players', 3000);
+  await guest.close();                          // a held player's rejoin replies with the current host
+  const g2 = await connect(srv);
+  g2.send({ t: 'rejoin', code, token: gj.token });
+  const m = await g2.waitFor('joined', 3000);
   assert.equal(m.host, gj.pid);
 });
 

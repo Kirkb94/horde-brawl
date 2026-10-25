@@ -495,7 +495,7 @@ function leaveRoom(ws, hold) {
     if (held) room.held.set(p.token, { p, timer: setTimeout(() => expireHold(room, p.token), HOLD_MS) });
     if (!room.players.size && !room.held.size) { stopSim(room); rooms.delete(room.code); return; }
     if (p.pid === room.host) {
-      if (held) room.heldHost = p.pid;   // remember a held host so they can reclaim it on rejoin
+      if (held && !(room.heldHost && room.held.size > 1 && [...room.held.values()].some(h => h.p.pid === room.heldHost))) room.heldHost = p.pid;   // remember a held host so they can reclaim it on rejoin (an interim host dropping must not overwrite the original)
       room.host = nextHost(room);
     }
     balanceTeams(room);
@@ -647,6 +647,14 @@ wss.on('connection', (ws, req) => {
       }
       case 'start':
         if (room && p && p.pid === room.host && !room.started) {
+          if (!room.auth) {
+            let bad = null;
+            for (const q of room.players.values()) if (!q.ws || q.ws.readyState !== 1) { bad = q; break; }   // missing, 2 = CLOSING or 3 = CLOSED
+            if (bad) {
+              send(ws, { t: 'err', msg: 'Can\'t start: ' + (bad.name || 'a player') + '\'s connection is dropped or closing. Try again in a moment.' });
+              return send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });
+            }
+          }
           if (room.auth) {
             if ([...rooms.values()].filter(r => r.sim).length >= MAX_MATCHES) return send(ws, { t: 'err', msg: 'The server is running as many matches as it can. Try again shortly.' });
             try { room.started = true; startSim(room, m.diff); } catch (e) { console.error('start failed', e); room.started = false; stopSim(room); return send(ws, { t: 'err', msg: 'Could not start the match on the server.' }); }

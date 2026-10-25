@@ -7435,7 +7435,7 @@ function netHostTick(dt){
   if(G.mode!=='play'&&G.mode!=='count'&&G.mode!=='ending')return;
   netScanFx();
   const now=performance.now();
-  if(now-NET.lastSend>=(NET.snapMs||66)){NET.lastSend=now;for(const pid in NET.cl)netRel(+pid,netSnapFor(NET.cl[pid]))}
+  const sm=NET.snapMs||66;if(now-NET.lastSend>=sm-3){NET.lastSend=now-NET.lastSend>sm*2?now:NET.lastSend+sm;for(const pid in NET.cl)netRel(+pid,netSnapFor(NET.cl[pid]))}
 }
 // ---------- client ----------
 function netOnStart(d){

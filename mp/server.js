@@ -16,7 +16,7 @@ const roomsOfIp = ip => { let n = 0; for (const r of rooms.values()) if (r.ip ==
 const HOST_RELAY_MAX = 240 * 1024;   // host snapshots can be big
 const CLIENT_RELAY_MAX = 32 * 1024;  // client inputs are small
 const CLIENT_RELAY_RATE = 120;       // max relay 'r' messages per second from a non-host client
-const LIMITS = { rejoin: [6, 10000], create: [3, 10000], join: [8, 10000], quick: [4, 10000], upd: [6, 5000], start: [4, 5000], lobby: [4, 5000] };   // [max, window ms]
+const LIMITS = { rejoin: [6, 10000], create: [3, 10000], join: [8, 10000], quick: [4, 10000], upd: [6, 5000], start: [4, 5000], lobby: [4, 5000], leave: [4, 5000], r: [400, 1000] };   // [max, window ms]
 const IP_JOIN_MAX = +(process.env.IP_JOIN_MAX || 30);   // join+quick attempts per IP per window (all sockets share it)
 const IP_JOIN_WINDOW = 10000;
 const ipJoin = new Map();   // ip -> { n, t }
@@ -30,6 +30,7 @@ function allowIp(ws) {
 }
 function allow(ws, type) {
   const L = LIMITS[type]; if (!L) return true;
+  if (type === 'r' && ws.room && ws.p && ws.p.pid === ws.room.host) return true;   // host relay is exempt: it streams snapshots
   const now = Date.now(); const b = ws.lim[type] || (ws.lim[type] = { n: 0, t: now });
   if (now - b.t > L[1]) { b.n = 0; b.t = now; }
   if (++b.n > L[0]) return false;
@@ -376,6 +377,14 @@ wss.on('connection', (ws, req) => {
       if (m.t === 'create') send(ws, { t: 'err', msg: 'Slow down - too many rooms created.' });
       else if (m.t === 'join' || m.t === 'quick') send(ws, { t: 'err', msg: 'Slow down - too many join attempts.' });
       else if (m.t === 'start') send(ws, { t: 'err', msg: 'Slow down - wait a moment before starting.' });
+      else if (m.t === 'leave') { leaveRoom(ws); send(ws, { t: 'left', self: true }); }   // still confirm so the client never sticks in a stale lobby
+      else if (m.t === 'upd') {                       // one reply per window (the first over-limit message) so we don't echo-flood
+        const ub = ws.lim.upd;
+        if (ub && ub.n === LIMITS.upd[0] + 1) {
+          send(ws, { t: 'err', msg: 'Slow down - too many name or hero changes.' });
+          if (room) send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });   // resync sender only
+        }
+      }
       return;
     }
     switch (m.t) {
@@ -467,7 +476,7 @@ wss.on('connection', (ws, req) => {
         rr.active = Date.now();
         return send(ws, { t: 'joined', code: rr.code, pid: q.pid, host: rr.host, players: list(rr), started: rr.started, token: q.token, rejoined: true });
       }
-      case 'leave': return leaveRoom(ws);
+      case 'leave': leaveRoom(ws); return send(ws, { t: 'left', self: true });   // confirm to the leaver (host-bound 'left' carries a pid)
       case 'r': {                                      // relay: client -> host, host -> peer or everyone
         if (!room || !p) return noRoom(ws);
         if (raw.length > (p.pid === room.host ? HOST_RELAY_MAX : CLIENT_RELAY_MAX)) { if (p.pid !== room.host) relStrike('oversize relay'); return; }   // oversize relay payload
@@ -521,6 +530,7 @@ setInterval(() => {
   for (const ws of wss.clients) { if (!ws.isAlive) { ws.terminate(); continue; } ws.isAlive = false; try { ws.ping(); } catch (e) {} }
   const now = Date.now();                              // sweep empty / abandoned lobbies
   for (const [c, r] of rooms) {
+   try {
     if (!r.players.size) { rooms.delete(c); continue; }
     if (r.started && now - (r.lastRelay || r.created) > 120000) {   // started but host relayed nothing for 2 min: frozen tab, back to the lobby
       r.started = false; r.lastRelay = 0;
@@ -546,6 +556,7 @@ setInterval(() => {
         }
       }
     }
+   } catch (e) { console.error('Room sweep error for ' + c + ': ' + (e && e.message)); }
   }
 }, 10000);
 

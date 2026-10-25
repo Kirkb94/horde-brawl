@@ -2943,7 +2943,7 @@ function netMsgInner(m){
       NET.players=m.players;NET.hostPid=m.host;NET.role=NET.pid===m.host?'host':'client';
       if(m.started&&NET.starting&&NET.role==='host'){NET.starting=false;NET.notice='';netHostStart();break}
       if(!m.started){if(NET.live)netCleanup();else{NET.m=null;NET.cl={};NET.inp={};NET.ready={};NET.acts=[]}netLobby()}else if(!NET.live)netLobby();break;
-    case'left':if(NET.m==='host')netBotify(m.pid);break;
+    case'left':if(NET.m==='host'&&!m.self)netBotify(m.pid);break;
     case'hostleft':NET.m=null;NET.cl={};NET.inp={};NET.ready={};NET.acts=[];NET.notice=(m.aborted?'The host left, so the match ended. ':'The host left. ')+(m.host===NET.pid?'You are now the host.':(m.name||'Another player')+' is now the host.');break;
     case'closed':netRecoStop();NET.tok='';NET.code='';NET.role=null;if(NET.ws){try{NET.ws.onclose=null;NET.ws.close()}catch(_){}NET.ws=null}netCleanup();NET.notice=m.reason||'The room was closed.';netMenu();break;
     case'err':if(NET.reco){if(m.rejoin===false)netRecoFail(m.msg);break}NET.starting=false;NET.status='';NET.notice=m.msg||'Error';if(NET.live)break;if(NET.code)netLobby();else netMenu();break;
@@ -3158,7 +3158,7 @@ function netHostTick(dt){
   if(G.mode!=='play'&&G.mode!=='count'&&G.mode!=='ending')return;
   netScanFx();
   const now=performance.now();
-  if(now-NET.lastSend>=66){NET.lastSend=now;if(NET.ws&&NET.ws.bufferedAmount>200000)return;for(const pid in NET.cl)netRel(+pid,netSnapFor(NET.cl[pid]))}
+  if(now-NET.lastSend>=63){NET.lastSend=now-NET.lastSend>132?now:NET.lastSend+66;if(NET.ws&&NET.ws.bufferedAmount>200000)return;for(const pid in NET.cl)netRel(+pid,netSnapFor(NET.cl[pid]))}
 }
 // ---------- client ----------
 function netOnStart(d){

@@ -111,16 +111,23 @@ test('auth: quick refuses to create a lobby when the match cap is reached', asyn
   assert.equal((await srv.stats()).rooms, 1);
 });
 
-test('relay: host leaving closes the room for everyone', async t => {
+test('relay: host leaving a lobby hands the room to the next player', async t => {
   const srv = await setup(t);
   const { host, joined } = await makeRoom(srv);
   const g = await connect(srv);
   g.send({ t: 'join', code: joined.code });
-  await g.waitFor('joined');
+  const gj = await g.waitFor('joined');
   await host.waitFor('players', 3000, m => m.players.length === 2);
   await host.close();
-  const c = await g.waitFor('closed');
-  assert.match(c.reason, /host left/i);
+  const m = await g.waitFor('players', 3000, x => x.players.length === 1);
+  assert.equal(m.host, gj.pid);
+  assert.equal((await srv.stats()).rooms, 1);
+});
+
+test('relay: last player leaving a lobby closes the room', async t => {
+  const srv = await setup(t);
+  const { host } = await makeRoom(srv);
+  await host.close();
   await until(async () => (await srv.stats()).rooms === 0, 5000, 'room removal');
 });
 
@@ -136,12 +143,12 @@ test('relay: a guest leaving notifies the host and keeps the room', async t => {
   assert.equal((await srv.stats()).rooms, 1);
 });
 
-test('relay: rejoin is not available', async t => {
+test('relay: rejoin into a lobby that holds no slot is refused', async t => {
   const srv = await setup(t);
   const { joined } = await makeRoom(srv);
   const g = await connect(srv);
-  g.send({ t: 'rejoin', code: joined.code, token: joined.token });
-  assert.match((await g.waitFor('err')).msg, /isn't available/);
+  g.send({ t: 'rejoin', code: joined.code, token: 'f'.repeat(32) });
+  assert.match((await g.waitFor('err')).msg, /no longer held/);
 });
 
 test('sweeper removes unstarted lobbies older than ROOM_MAX_AGE_MS', async t => {
