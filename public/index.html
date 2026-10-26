@@ -703,7 +703,7 @@ const CHARS={
   pistol:{spd:1.0,hpMax:185,name:'Wren',role:'Sentry',ab:'Sentry Turret',btn:'TURRET',cd:16,desc:'Drops an auto-firing turret that guards the spot for 14s'},
   revolver:{spd:0.96,hpMax:190,name:'Cinder',role:'Arsonist',ab:'Molotov',btn:'MOLOTOV',cd:13,desc:'Tap anywhere in range to lob a fire bomb there. The flames burn anyone standing in them'},
   smg:{spd:1.12,hpMax:200,name:'Haze',role:'Trapper',ab:'Gas Mines',btn:'MINES',cd:7,desc:'Carries hidden mines (3 to start) and recharges one every 7s. Mines take 2s to arm. Each bursts into a big cloud that slows heavily, and tags whoever tripped it for 3s so you can see them through walls (Tripwire Pulse)'},
-  rifle:{spd:0.92,hpMax:180,name:'Aegis',role:'Guardian',ab:'Barrier',btn:'BARRIER',cd:16,desc:'Raises a 180° energy barrier that moves with you and turns to face wherever you aim. It blocks enemy movement and shots from the front until it takes 70 damage'},
+  rifle:{spd:0.92,hpMax:180,name:'Aegis',role:'Guardian',ab:'Barrier',btn:'BARRIER',cd:16,desc:'Raises a 180° energy barrier that moves with you and turns to face wherever you aim. It blocks enemy movement and shots from the front until it takes 70 damage. Zombies claw at it too'},
   shotgun:{spd:0.792,hpMax:334,name:'Rampart',role:'Breaker',ab:'Cover',btn:'COVER',cd:20,desc:'Deploys a spiked wall (200 HP) that blocks movement and half of shots from the front. Foes who touch the spikes take damage'},
   sniper:{spd:1.1,hpMax:195,name:'Veil',role:'Ghost',ab:'Cloak',btn:'CLOAK',cd:20,desc:'Vanish for 5s. Foes only spot you up close. Firing breaks it. Z zooms: a much tighter cone that sees much farther'},
   rocket:{spd:.96,hpMax:160,name:'Torque',role:'Demolisher',ab:'Rocket Jump',btn:'JUMP',cd:14,desc:'Fires a rocket at your feet and launches you about 320 units the way you are moving (the way you aim if standing still). You fly over walls. The blast hurts nearby foes, never you'},
@@ -5149,6 +5149,14 @@ function controlHorde(z,dt){
       if(z.zk==='hunter'&&!z.lcd&&tg.inv<=0&&tg.jumpT<=0&&tg.dashT<=0){const k=(z.r+tg.r-3)/(dist||1);z.latch=tg;z.lx=(z.x-tg.x)*k;z.ly=(z.y-tg.y)*k;z.atkCD=.15}
       if(z.atkCD<=0){z.atkCD=z.zrate;z.swingT=.28;SFX.snarl(z.x,z.y);
         if(tg.inv<=0&&tg.jumpT<=0){const ex=tg.x-z.x,ey=tg.y-z.y;damage(tg,z.zdmg,z,{x:z.x,y:z.y,vx:ex,vy:ey,expl:0});tg.slowAmt=Math.min(.75,(tg.slowT>0?tg.slowAmt:0)+(z.zk==='crawler'?.2:.14));tg.slowT=Math.max(tg.slowT,1.2);tg.kbx=clamp(tg.kbx+ex/dist*160,-520,520);tg.kby=clamp(tg.kby+ey/dist*160,-520,520);if(near(tg.x,tg.y))burst(tg.x,tg.y,'#a3202a',6,200)}}}}
+  // pressed against an enemy Aegis barrier: claw at it (it blocks zombies, so otherwise they just stand there)
+  if(!stop&&!z.struct){for(let _ib=0,_ab=G.deploys;_ib<_ab.length;_ib++){const bd=_ab[_ib];if(bd.kind!=='barrier'||!(bd.hp>0)||!bd.owner||isAlly(bd.owner,z))continue;
+    const rx=z.x-bd.x,ry=z.y-bd.y,dd=Math.hypot(rx,ry);if(dd>bd.R+6+z.r+8||dd<bd.R-6-z.r-4||Math.abs(angDiff(bd.dir,Math.atan2(ry,rx)))>Math.PI/2)continue;
+    stop=true;ang=Math.atan2(-ry,-rx);z.facing=ang;
+    if(z.atkCD<=0){z.atkCD=z.zrate;z.swingT=.28;SFX.snarl(z.x,z.y);bd.hp-=z.zdmg;bd.flash=.12;if(near(z.x,z.y))burst(z.x-rx/(dd||1)*z.r,z.y-ry/(dd||1)*z.r,'#7fd7ff',5,150);
+      if(bd.hp<=0){bd.life=0;if(near(bd.x,bd.y))burst(bd.x,bd.y,'#7fd7ff',18,300);G.fx.push({kind:'ring',x:bd.x,y:bd.y,age:0,life:.35,r:34,col:'#7fd7ff'});
+        const k=bd.owner.st.fx.shock;if(k)explode({x:bd.x,y:bd.y,expl:120,dmg:35*(1+.5*(k-1)),owner:bd.owner})}}
+    break}}
   z.mv=stop?{x:0,y:0}:{x:mx,y:my};
   // wedged against something? shuffle a different way for a moment
   z.chkT-=dt;if(z.chkT<=0){z.chkT=1.2;if(!stop&&Math.hypot(z.x-z.cx,z.y-z.cy)<10){z.unst=.7;z.ua=Math.random()*TAU}z.cx=z.x;z.cy=z.y}
