@@ -656,7 +656,7 @@ const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()
 
 // ---------- Tuning ----------
 let N_FIGHT=16, R0=2900;const WIN_DROPS=3;let WORLD=4000, MID=WORLD/2;
-const mhp=f=>f.zomb?f.zhp:(f.hamT>0&&f.weapon==='hammer')?1000:Math.round((f.lvH||1)*(CHARS[f.weapon].hpMax*(1+.3*((f.st&&f.st.fx.maxhp)||0)+.5*((f.st&&f.st.fx.r_titan)||0))+25*((f.st&&f.st.fx.stout)||0))*(modOn('frag')?.7:1)), SPEED=172.5, DASH_SPEED=720, DASH_T=0.16, DASH_CD=1.6, INV_T=0.26;
+const mhp=f=>f.zomb?f.zhp:(f.hamT>0&&f.weapon==='hammer')?UNB.hp:Math.round((f.lvH||1)*(CHARS[f.weapon].hpMax*(1+.3*((f.st&&f.st.fx.maxhp)||0)+.5*((f.st&&f.st.fx.r_titan)||0))+25*((f.st&&f.st.fx.stout)||0))*(modOn('frag')?.7:1)), SPEED=172.5, DASH_SPEED=720, DASH_T=0.16, DASH_CD=1.6, INV_T=0.26;
 const VIEW_R=560, FOV=rad(100), NEAR=90, BO_FOV=rad(45);
 // per-fighter vision: the sniper's zoom narrows the cone and reaches farther; a blackout narrows every cone
 const vr=f=>(f.hovT>0?1.7:1)*VIEW_R*(1+2*(f.zoomK||0)*(1+.25*((f.st&&f.st.fx&&f.st.fx.scope)||0)));
@@ -721,17 +721,23 @@ const KIT={
   pistol:{sk:'Relay',skB:'RELAY',skCd:9,skD:'Swap places with your newest turret. No turret out? Drops one at your feet',ult:'Overclock',ultD:'For 7s your turrets fire 3× faster and you fire 40% faster. Drops a bonus turret'},
   revolver:{sk:'Flashpoint',skB:'FLASH',skCd:10,skD:'Every burning foe within 520 explodes for 38 damage',ult:'Wildfire',ultD:'Lobs a wall of ten fire bombs in a long line ahead of you that burns for 8s'},
   smg:{sk:'Smoke Step',skB:'SMOKE',skCd:8,skD:'A long dash that leaves a trail of gas clouds',ult:'Choke Cloud',ultD:'A huge gas field at your aim point for 8s. Foes inside slow hard and show through walls'},
-  rifle:{sk:'Shield Bash',skB:'BASH',skCd:9,skD:'Charge forward behind your shield. Foes hit take 30 plus half your barrier\'s health and fly back, and slamming them into a wall stuns them',ult:'Bulwark',ultD:'A fresh 220 HP barrier and half damage for 5s, for you and allies nearby'},
+  rifle:{sk:'Shield Bash',skB:'BASH',skCd:9,skD:'Charge forward behind your shield. Foes hit take 45 plus half your barrier\'s health and fly back, and slamming them into a wall stuns them',ult:'Bulwark',ultD:'A fresh 220 HP barrier and half damage for 5s, for you and allies nearby'},
   shotgun:{sk:'Hook',skB:'HOOK',skCd:10,skD:'Fling a chained hook out along the left edge of your shotgun cone; at full length it sweeps across to the right edge. It latches onto the first hero it hits and drags them back to you. You are rooted in place while you reel them in. Drag them through one of your spiked walls for 80 damage: the wall and hook shatter and the hook cooldown is cut in half',ult:'Fortress',ultD:'Raises four spiked walls around you'},
   sniper:{sk:'Shadow Step',skB:'BLINK',skCd:8,skD:'Blink silently the way you move, then 1.5s of cloak',ult:'Deadeye',ultD:'A rail shot that pierces every body in its path for 150. A kill resets Cloak'},
   rocket:{sk:'Satchel',skB:'SATCHEL',skCd:9,skD:'Lob a charge that lands, beeps for 1.1s, then blows for 130 damage',ult:'Barrage',ultD:'Twenty rockets rain around your aim point over 6s'},
   crossbow:{sk:'Overload',skB:'OVERLOAD',skCd:8,skD:'Every post you own discharges for 45 around it, then collapses. Fence recharges faster',ult:'Cage',ultD:'An electrified cage drops on the nearest foe: 15 damage a second and no way out for 5s'},
   carbine:{sk:'Paint',skB:'PAINT',skCd:8,skD:'Marks the first foe in your sights: they take 30% more from everyone for 5s',ult:'Uplink',ultD:'Locks onto every enemy hero on the map and warns them. 1.5s later it strikes each one for 55 (a dash dodges it), roots them for 1s and marks them for 20s: they show on your team\'s map and take double damage from you'},
-  scorch:{sk:'Backdraft',skB:'PULL',skCd:10,skD:'Drags foes within 300 toward you and sets them ablaze',ult:'Sanctuary',ultD:'A tougher dome that heals you and allies inside 14 HP a second'},
-  sword:{sk:'Parry',skB:'PARRY',skCd:7,skD:'For 0.7s every shot that hits you flies back at the shooter',ult:'Thousand Cuts',ultD:'Blink through up to six nearby foes, 45 damage each'},
+  scorch:{sk:'Backdraft',skB:'PULL',skCd:10,skD:'Drags foes within 300 toward you and sets them ablaze (14 a second for 4s)',ult:'Sanctuary',ultD:'A tougher dome that heals you and allies inside 14 HP a second'},
+  sword:{sk:'Parry',skB:'PARRY',skCd:7,skD:'For 0.7s every shot that hits you flies back at the shooter',ult:'Thousand Cuts',ultD:'Blink through up to six nearby foes, 55 damage each'},
   hammer:{sk:'Shockwave',skB:'QUAKE',skCd:15,skD:'Slam the ground and send a narrow shockwave rolling out in front of you. Foes in its path are rooted for 2s the moment you cast, then take 20 damage and are stunned for 2s when it reaches them. Against zombies it fans out wide and stuns the whole crowd',ult:'Unbound',ultD:'For 10s you glow with power and your max health becomes 1000, filled to the top. When it ends you drop back to your normal max'},
   necro:{sk:'Grave Hover',skB:'HOVER',skCd:12,skD:'Rise above the battlefield for up to 3s: you are rooted and untouchable and see much farther. Press E again, or wait, to swoop down where you aim (up to 600 away) and raise a pack of 4 crawlers',ult:'Raise Dead',ultD:'Raise a Matriarch at your aim point. She fights for you for 30s, and spiders crawl out of her, up to 40 at once'}
 };
+/* ABAL: hero ability balance (16-bot battle royale sims). q = signature cooldown (s), e = skill cooldown (s), x = ultimate charge speed (1 = normal). */
+const ABAL={"hammer":{"q":11,"x":0.75},"scorch":{"q":16,"e":7,"x":1.4},"pistol":{"q":10,"e":7,"x":1.35},"carbine":{"q":12,"e":6,"x":1.2},"rifle":{"q":12,"e":7,"x":1.15},"sword":{"q":6,"e":6,"x":1.1},"necro":{"x":1.3},"revolver":{"q":18,"x":0.9},"crossbow":{"q":17},"shotgun":{"q":23,"e":13,"x":0.9}};
+for(const k in ABAL){const a=ABAL[k];if(a.q)CHARS[k].cd=a.q;if(a.e)KIT[k].skCd=a.e;if(a.x)KIT[k].ultK=a.x}
+const UNB={"t":6,"hp":550};
+KIT.hammer.ultD='For '+UNB.t+'s you glow with power and your max health becomes '+UNB.hp+', filled to the top. When it ends you drop back to your normal max';
+/* ABAL end */
 // the Tide: all numbers for the zombie zone live here
 const TIDE={bossPh:3,bossHp:1000,bountyEvery:9,bountyKills:3,bruteBase:.07,brutePerPh:.045,bruteMax:.25,runnerPh:2,runnerPer:.1,runnerMax:.3};
 const fxm=(k,v=1)=>m=>{m.fx[k]=(m.fx[k]||0)+v};
@@ -3657,7 +3663,7 @@ function skCdMax(f){const fx=f.st.fx;return (1-.1*((f.rk&&f.rk.e)||0))*KIT[f.wea
 function dashCdMax(f){return DASH_CD*(1-.2*Math.min(3,(f.st&&f.st.fx.quick)||0))*(setOn(f,'mobility')?.8:1)}
 function ultGain(f,v){
   if(!f||f.zomb||!f.alive||!(v>0)||G.time<(f.ultLock||0))return; // no charge while your own ultimate is still working
-  const was=f.ult||0;f.ult=Math.min(ULT_MAX,was+v*(1+.2*((f.rk&&f.rk.x)||0))*(1+.25*(f.st.fx.ultc||0))*(setOn(f,'ult')?1.15:1));
+  const was=f.ult||0;f.ult=Math.min(ULT_MAX,was+v*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(1+.2*((f.rk&&f.rk.x)||0))*(1+.25*(f.st.fx.ultc||0))*(setOn(f,'ult')?1.15:1));
   if(f===G.P&&!NET.srv&&was<ULT_MAX&&f.ult>=ULT_MAX&&!G.debug&&!G.ultTold){G.ultTold=true;NARR.say('vo_ult_ready',{queue:true})}
   if(f===G.P&&!NET.srv&&was<ULT_MAX&&f.ult>=ULT_MAX&&!G.debug){feedAdd(KIT[f.weapon].ult+' ready · press '+keyName((BIND.ult||['KeyX'])[0]),true);SFX.pickup&&SFX.pickup('orb',f.x,f.y)}
 }
@@ -3817,7 +3823,7 @@ function cutsStep(f,dt){
   const a=Math.atan2(best.y-f.y,best.x-f.x),sx=f.x,sy=f.y,off=best.r+f.r+8;
   let x=best.x+Math.cos(a)*off,y=best.y+Math.sin(a)*off;if(!walkAt(x,y)){x=best.x-Math.cos(a)*off;y=best.y-Math.sin(a)*off}
   if(walkAt(x,y)){f.x=x;f.y=y;collide(f)}
-  f.facing=a;f.swordOut=1;damage(best,45,f,null);
+  f.facing=a;f.swordOut=1;damage(best,55,f,null);
   // blink trail: a fading streak along the jump plus afterimages
   G.fx.push({kind:'btrail',x1:sx,y1:sy,x2:f.x,y2:f.y,age:0,life:.75,col:CPAL.sword.acc});
   for(let k=1;k<=4;k++){const q=k/5;G.fx.push({kind:'ghost',x:sx+(f.x-sx)*q,y:sy+(f.y-sy)*q,age:-k*.03,life:.45+k*.04,col:CPAL.sword.acc})}
@@ -3843,7 +3849,7 @@ function skillCore(f){
   if(k==='rifle'){ // Shield Bash
     let b=null;for(const d of G.deploys)if(d.kind==='barrier'&&d.owner===f)b=d;
     const bonus=b?b.hp*.5:0;if(b)b.life=0;
-    kitDash(f,f.facing,240,1000,{kind:'bash',dmg:30+bonus,kb:620,col:'#7fd7ff'});return true;
+    kitDash(f,f.facing,240,1000,{kind:'bash',dmg:45+bonus,kb:620,col:'#7fd7ff'});return true;
   }
   if(k==='shotgun'){if(f.hook)return false;const a=f.tgtPt?Math.atan2(f.tgtPt.y-f.y,f.tgtPt.x-f.x):f.facing;f.facing=a;f.hook={ph:'out',a,t:0,len:0,hx:f.x,hy:f.y,tgt:null};return true} // Hook
   if(k==='sniper'){ // Shadow Step
@@ -3875,7 +3881,7 @@ function skillCore(f){
       if(!foeOf(f,e))continue;const dx=f.x-e.x,dy=f.y-e.y,d=Math.hypot(dx,dy);if(d>300||d<1)continue;
       if(rayCast(f.x,f.y,Math.atan2(-dy,-dx),d)<d-e.r)continue;
       const p=(e.zk==='boss'?.15:1)*820*(1-d/300*.35);e.kbx=clamp(e.kbx+dx/d*p,-900,900);e.kby=clamp(e.kby+dy/d*p,-900,900);
-      e.burnT=Math.max(e.burnT,3);e.burnDps=Math.max(e.burnDps,6);e.burnSrc=f;
+      e.burnT=Math.max(e.burnT,4);e.burnDps=Math.max(e.burnDps,14);e.burnSrc=f;
     }
     G.fx.push({kind:'ring',x:f.x,y:f.y,age:0,life:.45,r:300,col:FIRE});if(near(f.x,f.y))burst(f.x,f.y,FIRE,24,320);return true;
   }
@@ -3885,7 +3891,7 @@ function skillCore(f){
 function ultCore(f){
   const k=f.weapon,fx=f.st.fx;
   if(k==='necro')return necX(f); // Raise Dead
-  if(k==='hammer'){f.hamT=10;f.hp=1000;if(f===G.P)VOICE.say('unbound_use',{pri:2,cd:2});if(near(f.x,f.y)){G.fx.push({kind:'ring',x:f.x,y:f.y,age:0,life:.6,r:90,col:CPAL.hammer.acc});burst(f.x,f.y,'#8fb4ff',26,340)}return true} // Unbound
+  if(k==='hammer'){f.hamT=UNB.t;f.hp=UNB.hp;if(f===G.P)VOICE.say('unbound_use',{pri:2,cd:2});if(near(f.x,f.y)){G.fx.push({kind:'ring',x:f.x,y:f.y,age:0,life:.6,r:90,col:CPAL.hammer.acc});burst(f.x,f.y,'#8fb4ff',26,340)}return true} // Unbound
   if(k==='pistol'){ // Overclock
     f.ocT=7;let n=0;for(const d of G.deploys)if(d.kind==='turret'&&d.owner===f&&!d.sgPerm)n++;
     if(n<2+(fx.twin||0))G.deploys.push(mkTurret(f,f.x+Math.cos(f.facing+2.4)*30,f.y+Math.sin(f.facing+2.4)*30));return true;
@@ -4472,7 +4478,7 @@ function stepFighter(f,dt){
   f.t+=dt;f.dashCD=Math.max(0,f.dashCD-dt);f.inv=Math.max(0,f.inv-dt);f.hitFlash=Math.max(0,f.hitFlash-dt);f.hurtT=Math.max(0,f.hurtT-dt);f.muzzle=Math.max(0,f.muzzle-dt);f.swingT=Math.max(0,f.swingT-dt);f.parryT=Math.max(0,(f.parryT||0)-dt);f.rdT=Math.max(0,(f.rdT||0)-dt);f.pingT=Math.max(0,f.pingT-dt);
   f.alertT=Math.max(0,(f.alertT||0)-dt);f.alertCD=Math.max(0,(f.alertCD||0)-dt);
   if(f.stunT>0)f.stunT-=dt;if(f.parryK>0)f.parryK-=dt;if(f.bulT>0)f.bulT-=dt;if(f.ocT>0)f.ocT-=dt;if(f.movT>0)f.movT-=dt;if(f.cuts)f.movT=Math.max(f.movT||0,.08);if(f.hamT>0){f.hamT-=dt;if(f.hamT<=0){f.hamT=0;f.hp=Math.min(f.hp,mhp(f));if(f===G.P&&f.alive)VOICE.say('unbound_end',{pri:1,cd:5})}}if(f.momT>0)f.momT-=dt;if(f.dash2CD>0)f.dash2CD-=dt;if(f.skCD>0)f.skCD-=dt;
-  if(!f.zomb&&f.alive&&!f.down&&G.mode==='play')f.ult=Math.min(ULT_MAX,(f.ult||0)+ULT_TRICKLE*dt);
+  if(!f.zomb&&f.alive&&!f.down&&G.mode==='play')f.ult=Math.min(ULT_MAX,(f.ult||0)+ULT_TRICKLE*dt*(KIT[f.weapon]&&KIT[f.weapon].ultK||1));
   if(f.cuts)cutsStep(f,dt);
   if(f.hook)hookStep(f,dt);if(f.hamPend)hamPendStep(f,dt);if(f.weapon==='necro')necStep(f,dt);if(f.hamT>0&&near(f.x,f.y)&&Math.random()<.3)G.fx.push({kind:'spark',x:f.x+rnd(-f.r,f.r),y:f.y+rnd(-f.r,f.r),vx:rnd(-40,40),vy:rnd(-90,-30),age:0,life:.4,col:Math.random()<.5?'#8fb4ff':'#ffffff'});
   if(f.slowT>0){f.slowT-=dt;if(f.slowT<=0)f.slowAmt=0}if(f.fcloak>0)f.fcloak-=dt;
