@@ -838,7 +838,7 @@ const UPGRADES=[
   {id:'nburst',gun:'necro',name:'Blight Burst',desc:'Your gas balls burst into a blight cloud for 2s',max:1,w:12,mod:fxm('nburst')},
   {id:'norb',gun:'necro',name:'Hungry Blight',desc:'Gas balls deal +20% damage and turn 25% sharper',max:2,w:12,mod:m=>{fxm('norb')(m);m.pct.damage=(m.pct.damage||0)+.2}},
   {id:'charge_necro',gun:'necro',name:'Second Grave',desc:'Mortis stores +1 extra Raise Walkers, recharged over time',max:3,w:12,mod:fxm('charge')},
-  {id:'r_kin',rare:1,gun:'necro',name:'Grave Kin',desc:'Zombies treat you as one of their own: they never target you. Your walkers and blight still fight them',max:1,w:12,mod:fxm('r_kin')},
+  {id:'r_kin',rare:1,gun:'necro',name:'Grave Kin',desc:'Zombies treat you as one of their own: they never target or grab you. You still can\'t hurt them, so let your walkers and other heroes do the fighting',max:1,w:12,mod:fxm('r_kin')},
 {id:'r_split',rare:1,gun:'necro',name:'Splitting Dead',desc:'Needs Grave Pact maxed. Your walkers burst into 2 crawlers when they are killed',max:1,w:14,mod:fxm('r_split')}
 ];
 // ================= HORDE BRAWL · cards =================
