@@ -211,6 +211,30 @@ function roomLimited(ws) {
 }
 
 const clean = (s, n) => String(s == null ? '' : s).replace(/[^\w \-.!?]/g, '').replace(/ {2,}/g, ' ').trim().slice(0, n).trim();
+// ---- lobby browser: room names and optional passwords ----
+const ROOM_NAME_MAX = 24, PASS_MAX = 32;
+const cleanRoom = (s, n) => String(s == null ? '' : s).replace(/[^\w '\-.!?]/g, '').replace(/ {2,}/g, ' ').trim().slice(0, n).trim();   // like clean(), apostrophes allowed
+const hashPass = (pw, salt) => crypto.createHash('sha256').update(salt).update(String(pw)).digest();   // casual room passwords: salted hash, cheap enough for a 0.1 CPU server
+function setPass(room, pw) {
+  pw = typeof pw === 'string' ? pw.slice(0, PASS_MAX) : '';
+  if (!pw) { room.pass = null; return; }
+  const salt = crypto.randomBytes(16); room.pass = { salt, hash: hashPass(pw, salt) };
+}
+const passOk = (room, pw) => !room.pass || (typeof pw === 'string' && crypto.timingSafeEqual(hashPass(pw.slice(0, PASS_MAX), room.pass.salt), room.pass.hash));
+const passFails = new Map();   // ip|code -> timestamps of wrong passwords (slows guessing; local IPs included)
+function passLimited(ws, code) {
+  const k = ws.ip + '|' + code, now = Date.now(), arr = (passFails.get(k) || []).filter(t => now - t < 10 * 60000);
+  passFails.set(k, arr); return arr.length >= 8;
+}
+function notePassFail(ws, code) { const k = ws.ip + '|' + code; (passFails.get(k) || passFails.set(k, []).get(k)).push(Date.now()); }
+setInterval(() => { const now = Date.now(); for (const [k, a] of passFails) if (!a.some(t => now - t < 10 * 60000)) passFails.delete(k); }, 60000).unref();
+const roomInfo = room => ({ code: room.code, name: room.name || '', locked: !!room.pass, mode: room.cfg.mode, map: room.cfg.map, size: room.cfg.size, n: room.players.size, cap: roomCap(room), started: !!room.started });
+function roomList() {
+  const out = [];
+  for (const r of rooms.values()) if (r.players.size) out.push(roomInfo(r));
+  out.sort((a, b) => (a.started - b.started) || ((a.n >= a.cap) - (b.n >= b.cap)) || (b.n - a.n));
+  return out.slice(0, 60);
+}
 const send = (ws, o) => { try { if (ws && ws.readyState === 1) { ws.send(JSON.stringify(o)); return true; } } catch (e) {} return false; };
 function rejoinFail(ws, msg) {
   ws.rjFails = (ws.rjFails || 0) + 1;
@@ -456,7 +480,7 @@ function balanceTeams(room) {
 }
 const list = room => [...room.players.values()].map(p => ({ pid: p.pid, name: p.name, weapon: p.weapon, team: p.team }));
 function bcastPlayers(room) {
-  const msg = { t: 'players', host: room.host, players: list(room), started: room.started, cfg: room.cfg };
+  const msg = { t: 'players', host: room.host, players: list(room), started: room.started, cfg: room.cfg, room: { name: room.name || '', locked: !!room.pass } };
   for (const p of room.players.values()) send(p.ws, msg);
 }
 // Returns an error message if the room can't accept a new player right now, else null.
@@ -474,7 +498,7 @@ function joinRoom(ws, room, name, weapon) {
   room.players.set(p.pid, p);
   if (!room.host) room.host = p.pid;
   room.active = Date.now();
-  send(ws, { t: 'joined', token: p.token, auth: room.auth, cfg: room.cfg, code: room.code, pid: p.pid, host: room.host, players: list(room), started: room.started });
+  send(ws, { t: 'joined', token: p.token, auth: room.auth, cfg: room.cfg, code: room.code, room: { name: room.name || '', locked: !!room.pass }, pid: p.pid, host: room.host, players: list(room), started: room.started });
   bcastPlayers(room);
 }
 // Next room leader: first player (join order) with an open socket, else first player, else 0.
@@ -591,6 +615,7 @@ wss.on('connection', (ws, req) => {
         if (roomLimited(ws)) return;
         const code = newCode(); if (!code || rooms.has(code)) return serverFull(ws);
         const r = { code, players: new Map(), held: new Map(), host: 0, started: false, created: Date.now(), auth: MODE === 'auth', sim: null, cfg: newCfg() };
+        r.name = cleanRoom(m.room, ROOM_NAME_MAX) || cleanRoom((clean(m.name, 14) || 'Player') + "'s room", ROOM_NAME_MAX); setPass(r, m.pass);
         rooms.set(code, r); joinRoom(ws, r, m.name, m.weapon);
         if (!r.players.size) rooms.delete(code);   // never leave an empty room holding a slot
         return;
@@ -599,18 +624,22 @@ wss.on('connection', (ws, req) => {
         const r = rooms.get(clean(m.code, 4).toUpperCase());
         if (joinLimited(ws)) return;
         if (!r) return send(ws, { t: 'err', msg: 'No room with that code.' });
+        if (r.pass) {
+          if (passLimited(ws, r.code)) return send(ws, { t: 'err', msg: 'Too many wrong passwords for that room. Try again in a few minutes.' });
+          if (!passOk(r, m.pass)) { if (m.pass) notePassFail(ws, r.code); return send(ws, { t: 'err', code: 'pass', room: r.code, name: r.name || '', msg: m.pass ? 'Wrong password.' : 'This room needs a password.' }); }
+        }
         return joinRoom(ws, r, m.name, m.weapon);
       }
       case 'quick': {
         if (joinLimited(ws)) return;
         let best = null;
-        for (const r of rooms.values()) if (!joinBlock(r) && (!best || r.players.size > best.players.size)) best = r;
+        for (const r of rooms.values()) if (!r.pass && !joinBlock(r) && (!best || r.players.size > best.players.size)) best = r;   // quick play never lands in a password room
         if (!best) {
           if (rooms.size - freedSlot(ws) >= MAX_ROOMS) return serverFull(ws);
           if (MODE === 'auth' && activeMatches() >= MAX_MATCHES) return send(ws, { t: 'err', msg: 'The server is running as many matches as it can. Try again shortly.' });
           if (roomLimited(ws)) return;
           const code = newCode(); if (!code || rooms.has(code)) return serverFull(ws);
-          best = { code, players: new Map(), held: new Map(), host: 0, started: false, created: Date.now(), auth: MODE === 'auth', sim: null, cfg: newCfg() }; rooms.set(code, best);
+          best = { code, players: new Map(), held: new Map(), host: 0, started: false, created: Date.now(), auth: MODE === 'auth', sim: null, cfg: newCfg(), name: cleanRoom((clean(m.name, 14) || 'Player') + "'s room", ROOM_NAME_MAX), pass: null }; rooms.set(code, best);
         }
         joinRoom(ws, best, m.name, m.weapon);
         if (!best.players.size) rooms.delete(best.code);
@@ -693,6 +722,13 @@ wss.on('connection', (ws, req) => {
         send(ws, { t: 'joined', token: q.token, auth: r.auth, cfg: r.cfg, code: r.code, pid: q.pid, host: r.host, players: list(r), started: r.started, rejoined: true });
         try { if (typeof r.sim.api.resync === 'function') r.sim.api.resync(q.pid); } catch (e) { console.error('resync failed', e); }
         return bcastPlayers(r);
+      }
+      case 'list': return send(ws, { t: 'rooms', rooms: roomList(), max: MAX_ROOMS });
+      case 'roomset': {   // host renames the room or changes / removes its password
+        if (!room || !p || p.pid !== room.host) return;
+        if (m.room !== undefined) room.name = cleanRoom(m.room, ROOM_NAME_MAX) || room.name;
+        if (m.pass !== undefined) setPass(room, m.pass);
+        return bcastPlayers(room);
       }
       case 'leave': return leaveRoom(ws);
       case 'r': {                                      // relay: client -> host, host -> peer or everyone

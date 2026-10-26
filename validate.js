@@ -37,6 +37,8 @@ function validateMsg(m) {
       if (m.name !== undefined && !str(m.name, 64)) return fail('Invalid name.');
       if (m.weapon !== undefined && !str(m.weapon, 32)) return fail('Invalid weapon.');
       if (m.t === 'join' && !str(m.code, 16)) return fail('Invalid room code.');
+      if (m.room !== undefined && !str(m.room, 64)) return fail('Invalid room name.');
+      if (m.pass !== undefined && !str(m.pass, 64)) return fail('Invalid password.');
       return { ok: true, msg: m };
     case 'rejoin':
       if (!str(m.code, 16)) return fail('Invalid room code.');
@@ -56,7 +58,11 @@ function validateMsg(m) {
     case 'start': case 'rematch':
       if (m.diff !== undefined && !str(m.diff, 16)) return fail('Invalid difficulty.');
       return { ok: true, msg: m };
-    case 'lobby': case 'leave':
+    case 'lobby': case 'leave': case 'list':
+      return { ok: true, msg: m };
+    case 'roomset':
+      if (m.room !== undefined && !str(m.room, 64)) return fail('Invalid room name.');
+      if (m.pass !== undefined && !str(m.pass, 64)) return fail('Invalid password.');
       return { ok: true, msg: m };
     case 'r': {
       if (!(m.to === undefined || m.to === '*' || (Number.isInteger(m.to) && m.to >= 0 && m.to <= 1e9))) return fail();

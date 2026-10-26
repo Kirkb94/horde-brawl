@@ -430,6 +430,7 @@ html[data-plat=pc] .go.ghost:hover{background:#1d2045;border-color:var(--lav2)}
 input[type=range]{accent-color:var(--pink)}
 .tbl{border:2px solid var(--line);border-radius:10px;font-family:var(--display);background:var(--navy2)}
 .tr.me{background:rgba(255,210,63,.12);color:var(--you)}
+.tr.lrow{grid-template-columns:28px 1fr auto;background:none;border:0;border-top:1px solid var(--line);color:inherit;font:inherit;padding:10px 12px;min-height:48px}.tr.lrow:first-child{border-top:0}.tr.lrow small{opacity:.7}.tr.lrow:hover:not([disabled]),.tr.lrow:focus-visible{background:rgba(255,255,255,.07)}
 .how,.build{font-family:var(--display)}
 #panel.elim{background:#140b16;border-color:var(--pink)}
 .kb,.wep{border-radius:8px}
@@ -5387,7 +5388,7 @@ panel.addEventListener('click',e=>{
     case 'zombies':startZombies();break;
     case 'online':netMenu();break;
     case 'daily':startDaily();break;
-    case 'n_quick':case 'n_create':case 'n_join':case 'n_start':case 'n_leave':case 'n_lobby':case 'n_rematch':case 'n_mode':case 'n_map':case 'n_team':case 'n_tsize':netAct2(b.dataset.act,v);break;
+    case 'n_quick':case 'n_create':case 'n_create2':case 'n_browse':case 'n_refresh':case 'n_back':case 'n_pick':case 'n_passjoin':case 'n_roomset':case 'n_unlock':case 'n_join':case 'n_start':case 'n_leave':case 'n_lobby':case 'n_rematch':case 'n_mode':case 'n_map':case 'n_team':case 'n_tsize':netAct2(b.dataset.act,v);break;
     case 'dbgnext':for(const f of G.fighters)aiPick(f);G.dropNo++;startDrop();break;
     case 'resume':togglePause();break;
     case 'spec':if(!NET.m)G.mode='play';hide();break;
@@ -7160,15 +7161,16 @@ function netLeaderChanged(prev,m){
 }
 function netMsgInner(m){
   switch(m.t){
-    case'joined':NET.auth=!!m.auth;netSessSave(m);if(m.cfg)NET.cfg=m.cfg;NET.pid=m.pid;NET.code=m.code;NET.hostPid=m.host;NET.players=m.players;NET.role=m.pid===m.host?'host':'client';NET.notice='';if(m.rejoined){netRecoStop();NET.lastSnap=performance.now();NET.modeSince=0}if(m.started){NET.status='';break}netLobby();break;
+    case'rooms':NET.roomList=Array.isArray(m.rooms)?m.rooms:[];if(NET.view==='browse')netBrowse();break;
+    case'joined':clearInterval(NET.listIv);NET.room=m.room||null;NET.auth=!!m.auth;netSessSave(m);if(m.cfg)NET.cfg=m.cfg;NET.pid=m.pid;NET.code=m.code;NET.hostPid=m.host;NET.players=m.players;NET.role=m.pid===m.host?'host':'client';NET.notice='';if(m.rejoined){netRecoStop();NET.lastSnap=performance.now();NET.modeSince=0}if(m.started){NET.status='';break}netLobby();break;
     case'players':
-      const pvHost=NET.hostPid;NET.players=m.players;NET.hostPid=m.host;if(m.cfg)NET.cfg=m.cfg;NET.role=NET.pid===m.host?'host':'client';netLeaderChanged(pvHost,m);
+      const pvHost=NET.hostPid;if(m.room)NET.room=m.room;NET.players=m.players;NET.hostPid=m.host;if(m.cfg)NET.cfg=m.cfg;NET.role=NET.pid===m.host?'host':'client';netLeaderChanged(pvHost,m);
       if(!m.started&&NET.live){netCleanup();netLobby()}else if(!NET.live&&!m.started)netLobby();break;
     case'left':if(NET.m==='host')netBotify(m.pid);break;
     case'hostlost':if(NET.m==='client')feedAdd('Host connection lost - waiting up to '+Math.round((m.ms||30000)/1000)+'s for them to return',false);break;
     case'hostback':if(NET.m==='client')feedAdd('Host is back',false);break;
     case'closed':netRecoStop();netSessClear();NET.code='';NET.role=null;if(NET.ws){try{NET.ws.onclose=null;NET.ws.close()}catch(_){}NET.ws=null}netCleanup();NET.notice=m.restarting?'Server restarting for an update. Your match was ended - start a new room in about a minute.':(m.reason||'The room was closed.');netMenu();break;
-    case'err':if(m.code==='full'){m.msg='Server full: no free rooms right now. Try again in a minute, or join a friend with their room code.'}if(NET.reco){if(m.rejoin===false)netRecoFail(m.msg);else{if(NET.ws){try{NET.ws.onclose=null;NET.ws.close()}catch(_){}NET.ws=null}netRecoNext()}break}if(m.rejoin===false)netSessClear();NET.status='';NET.notice=m.msg||'Error';if(NET.code)netLobby();else netMenu();break;
+    case'err':if(m.code==='pass'&&!NET.code){NET.status='';netPassView(m.room,m.name,m.msg==='This room needs a password.'?'':m.msg);break}if(m.code==='full'){m.msg='Server full: no free rooms right now. Try again in a minute, or join a friend with their room code.'}if(NET.reco){if(m.rejoin===false)netRecoFail(m.msg);else{if(NET.ws){try{NET.ws.onclose=null;NET.ws.close()}catch(_){}NET.ws=null}netRecoNext()}break}if(m.rejoin===false)netSessClear();NET.status='';NET.notice=m.msg||'Error';if(NET.code)netLobby();else if(NET.view==='pass'){const nm=(NET.roomList||[]).find(q=>q.code===NET.passCode);NET.notice='';netPassView(NET.passCode,nm&&nm.name,m.msg)}else if(NET.view==='browse'){netBrowse();netSend({t:'list'})}else netMenu();break;
     case'pong':NET.rtt=Math.max(0,Date.now()-m.ts);NET.lag=Math.min(.12,NET.rtt/2000+.03);break;
     case'r':netRecv(m.from,m.d);break;
   }
@@ -7219,7 +7221,8 @@ function netMenu(){
   ${NET.notice?`<p class="lede" style="color:var(--foe)">${esc(NET.notice)}</p>`:''}${NET.status?`<p class="lede">${esc(NET.status)}</p>`:''}
   <div class="group"><span class="glabel">Your name</span><input class="nin" id="nName" maxlength="14" placeholder="Player" value="${esc(NET.name)}" autocomplete="off"></div>
   <div class="group"><span class="glabel">Choose your character</span>${wepGrid()}</div>
-  <button class="go" data-act="n_quick">Quick play</button>
+  <button class="go" data-act="n_browse">Browse lobbies</button>
+  <button class="go ghost" data-act="n_quick">Quick play</button>
   <button class="go ghost" data-act="n_create">Create a room</button>
   <div class="group"><span class="glabel">Join a friend's room</span><div class="nrow"><input class="nin" id="nCode" maxlength="4" placeholder="CODE" autocomplete="off" style="text-transform:uppercase;letter-spacing:.3em;text-align:center"><button class="go" data-act="n_join">Join</button></div></div>
   <details class="how"><summary>Server address</summary><input class="nin" id="nSrv" placeholder="Leave empty to use this site" value="${esc(srv)}" autocomplete="off"><p class="lede">Only change this if you host the server somewhere else, e.g. wss://your-app.onrender.com/ws</p></details>
@@ -7229,6 +7232,39 @@ function netReadForm(){
   const n=$('#nName'),s=$('#nSrv');
   if(n){NET.name=n.value.replace(/[^\w \-.!?]/g,'').trim().slice(0,14);try{localStorage.setItem('hordename',NET.name)}catch(e){}}
   if(s){try{localStorage.setItem('hordeserver',s.value.trim())}catch(e){}}
+}
+// ---------- lobby browser: list rooms, optional room passwords ----------
+const MAPNAME=k=>!k||k==='random'?'Random map':(MAPS[k]?MAPS[k].name:k);
+function netCreateForm(){
+  NET.view='create';G.mode='menu';G.P=null;showHUD(false);
+  show(`<p class="eyebrow">Online</p><h1>Create a <em>room</em></h1>
+  ${NET.notice?`<p class="lede" style="color:var(--foe)">${esc(NET.notice)}</p>`:''}
+  <div class="group"><label class="glabel" for="nRoom">Room name</label><input class="nin" id="nRoom" maxlength="24" placeholder="${esc((NET.name||'Player')+"'s room")}" autocomplete="off"></div>
+  <div class="group"><label class="glabel" for="nPass">Password (optional)</label><input class="nin" id="nPass" type="password" maxlength="32" placeholder="Leave empty for an open room" autocomplete="new-password"><p class="lede">Rooms with a password show a 🔒 in the lobby list. Players type it to get in. Quick play never puts strangers in a locked room.</p></div>
+  <button class="go" data-act="n_create2">Create room</button>
+  <button class="go ghost" data-act="n_back">Back</button>`);
+  const r=$('#nRoom');if(r)r.focus();
+}
+function netBrowse(){
+  NET.view='browse';G.mode='menu';G.P=null;showHUD(false);
+  const L=NET.roomList,rows=!L?'<p class="lede">Loading lobbies…</p>':!L.length?'<p class="lede">No lobbies right now. Create one and your friends will see it here.</p>':
+    `<div class="tbl lobbies">${L.map(r=>{const full=r.n>=r.cap,off=r.started||full;
+      return `<button class="tr lrow" data-act="n_pick" data-v="${esc(r.code)}"${off?' disabled aria-disabled="true"':''} style="width:100%;text-align:left;cursor:${off?'default':'pointer'};opacity:${off?.5:1}">
+      <span>${r.locked?'🔒':''}</span><span><b>${esc(r.name||'Room '+r.code)}</b><br><small>${esc(MODES[r.mode]||r.mode)} · ${esc(MAPNAME(r.map))}</small></span><span>${r.n}/${r.cap}${r.started?' · In match':full?' · Full':''}</span></button>`}).join('')}</div>`;
+  show(`<p class="eyebrow">Online · ${L?L.length:0} ${L&&L.length===1?'lobby':'lobbies'}</p><h1>Browse <em>lobbies</em></h1>
+  ${NET.notice?`<p class="lede" style="color:var(--foe)">${esc(NET.notice)}</p>`:''}
+  ${rows}
+  <div class="nrow"><button class="go ghost" data-act="n_refresh">Refresh</button><button class="go ghost" data-act="n_create">Create a room</button></div>
+  <button class="go ghost" data-act="n_back">Back</button>`);
+  clearInterval(NET.listIv);NET.listIv=setInterval(()=>{if(NET.view!=='browse'||!NET.ws||NET.ws.readyState!==1){clearInterval(NET.listIv);return}netSend({t:'list'})},4000);
+}
+function netPassView(code,name,err){
+  NET.view='pass';NET.passCode=code;G.mode='menu';G.P=null;showHUD(false);
+  show(`<p class="eyebrow">🔒 Locked room</p><h1>${esc(name||'Room '+code)}</h1>
+  ${err?`<p class="lede" style="color:var(--foe)">${esc(err)}</p>`:'<p class="lede">This room has a password. Ask the host for it.</p>'}
+  <div class="group"><label class="glabel" for="nPass2">Password</label><div class="nrow"><input class="nin" id="nPass2" type="password" maxlength="32" autocomplete="off"><button class="go" data-act="n_passjoin" data-v="${esc(code)}">Join</button></div></div>
+  <button class="go ghost" data-act="n_back">Back</button>`);
+  const i=$('#nPass2');if(i){i.focus();i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();netAct2('n_passjoin',code)}}}
 }
 function netCap(){const c=NET.cfg;return c.mode==='duel'?2:c.mode==='team'?tsOf(c)*2:c.size}
 function netSizeChange(v){if(NET.role==='host'){NET.cfg.size=v;const e=$('#nsizeV');if(e)e.textContent=v;clearTimeout(netSizeChange.t);netSizeChange.t=setTimeout(()=>netSend({t:'cfg',mode:NET.cfg.mode,size:v,map:NET.cfg.map}),150)}}
@@ -7240,7 +7276,7 @@ function netLobby(){
   NET.view='lobby';G.mode='menu';G.P=null;showHUD(false);
   const host=NET.role==='host',cfg=NET.cfg,tm=cfg.mode==='team',capN=netCap(),me=NET.players.find(p=>p.pid===NET.pid);
   const tl=t=>t===1?'Team B':'Team A';
-  show(`<p class="eyebrow">Room code · ${NET.players.length}/${capN} players · ${MODES[cfg.mode]}${cfg.mode==='br'?' · '+cfg.size+' fighters':cfg.mode==='team'?' · '+teamLabel(tsOf(cfg)):''}</p><h1 style="letter-spacing:.25em;font-size:56px">${esc(NET.code)}</h1>${modLine(cfg.mods)}
+  show(`<p class="eyebrow">Room code · ${NET.players.length}/${capN} players · ${MODES[cfg.mode]}${cfg.mode==='br'?' · '+cfg.size+' fighters':cfg.mode==='team'?' · '+teamLabel(tsOf(cfg)):''}</p><h1 style="letter-spacing:.25em;font-size:56px">${esc(NET.code)}</h1>${NET.room&&NET.room.name?`<p class="lede" style="font-weight:700">${NET.room.locked?'🔒 ':''}${esc(NET.room.name)}</p>`:''}${modLine(cfg.mods)}
   ${NET.notice?`<p class="lede" style="color:var(--foe)">${esc(NET.notice)}</p>`:''}
   <p class="lede">${host?(NET.auth?'Share the code with friends. Empty slots are filled with bots when you start.':'Share the code with friends. Empty slots are filled with bots when you start. Keep this tab open and in front: the match runs in your browser.'):'Waiting for the room leader to start the match.'}</p>
   <div class="tbl">${NET.players.map(p=>`<div class="tr${p.pid===NET.pid?' me':''}"><span>${p.pid===NET.hostPid?'★':''}</span><span>${esc(p.name)}</span><span>${tm?tl(p.team)+' · ':''}${CHARS[p.weapon]?CHARS[p.weapon].name:''}</span></div>`).join('')}</div>
@@ -7250,6 +7286,9 @@ function netLobby(){
   ${cfg.mode==='br'?`<div class="group"><label class="glabel" for="nsize">Lobby size · <b id="nsizeV">${cfg.size}</b> fighters (empty slots are bots)</label><input class="nin" type="range" id="nsize" min="${Math.max(2,NET.players.length)}" max="16" value="${cfg.size}" style="padding:6px"></div>`:`<p class="lede">${cfg.mode==='duel'?'1v1: a small arena with a light zombie horde. First to 3 round wins.':teamLabel(tsOf(cfg))+': two teams of '+tsOf(cfg)+', pick yours above. Bots fill empty team slots. Allies cannot hurt each other.'}</p>${cfg.mode==='team'&&host?`<div class="group"><span class="glabel">Team size</span><div class="seg">${TSIZES.map(n=>`<button data-act="n_tsize" data-v="${n}" aria-pressed="${tsOf(cfg)===n}">${teamLabel(n)}</button>`).join('')}</div></div>`:''}`}
   ${modGroup()}
   <div class="group"><span class="glabel">Bot skill</span><div class="seg">${Object.keys(DIFF).map(k=>`<button data-act="diff" data-v="${k}" aria-pressed="${G.diff===k}">${cap(k)}</button>`).join('')}</div></div>`:''}
+  ${host?`<details class="how"><summary>Room name &amp; password</summary><div class="group"><label class="glabel" for="nRoomE">Room name</label><input class="nin" id="nRoomE" maxlength="24" value="${esc(NET.room&&NET.room.name||'')}" autocomplete="off"></div>
+  <div class="group"><label class="glabel" for="nPassE">${NET.room&&NET.room.locked?'New password':'Password'}</label><input class="nin" id="nPassE" type="password" maxlength="32" placeholder="${NET.room&&NET.room.locked?'Leave empty to keep the current one':'Leave empty for an open room'}" autocomplete="new-password"></div>
+  <div class="nrow"><button class="go ghost" data-act="n_roomset">Save</button>${NET.room&&NET.room.locked?'<button class="go ghost" data-act="n_unlock">Remove password</button>':''}</div></details>`:''}
   <details class="how"><summary>Change character</summary>${wepGrid()}</details>
   ${host?'<div class="pfoot"><button class="go" data-act="n_start">Start match</button></div>':''}
   <button class="go ghost" data-act="n_leave">Leave room</button>`);
@@ -7257,7 +7296,15 @@ function netLobby(){
 function netAct2(act,v){
   switch(act){
     case'n_quick':netReadForm();NET.notice='';netConnect(()=>netSend({t:'quick',name:NET.name,weapon:G.pick}));break;
-    case'n_create':netReadForm();NET.notice='';netConnect(()=>netSend({t:'create',name:NET.name,weapon:G.pick}));break;
+    case'n_create':netReadForm();NET.notice='';netCreateForm();break;
+    case'n_create2':{const r=$('#nRoom'),pw=$('#nPass');const room=r?r.value.replace(/[^\w '\-.!?]/g,'').trim().slice(0,24):'',pass=pw?pw.value.slice(0,32):'';NET.notice='';netConnect(()=>netSend({t:'create',name:NET.name,weapon:G.pick,room,pass}));break}
+    case'n_browse':netReadForm();NET.notice='';NET.roomList=null;netConnect(()=>{netBrowse();netSend({t:'list'})});break;
+    case'n_refresh':netSend({t:'list'});break;
+    case'n_back':clearInterval(NET.listIv);NET.notice='';if(NET.code)netLobby();else netMenu();break;
+    case'n_pick':{const r=(NET.roomList||[]).find(q=>q.code===v);if(!r||r.started||r.n>=r.cap)break;NET.notice='';if(r.locked){netPassView(r.code,r.name);break}netSend({t:'join',code:r.code,name:NET.name,weapon:G.pick});break}
+    case'n_passjoin':{const i=$('#nPass2');netSend({t:'join',code:v,pass:i?i.value.slice(0,32):'',name:NET.name,weapon:G.pick});break}
+    case'n_roomset':if(NET.role==='host'){const r=$('#nRoomE'),pw=$('#nPassE'),o={};if(r&&r.value.trim())o.room=r.value.replace(/[^\w '\-.!?]/g,'').trim().slice(0,24);if(pw&&pw.value)o.pass=pw.value.slice(0,32);if(Object.keys(o).length)netSend(Object.assign({t:'roomset'},o))}break;
+    case'n_unlock':if(NET.role==='host')netSend({t:'roomset',pass:''});break;
     case'n_join':{netReadForm();const c=($('#nCode').value||'').trim().toUpperCase();if(c.length!==4){NET.notice='Enter the 4 letter room code.';netMenu();break}NET.notice='';netConnect(()=>netSend({t:'join',code:c,name:NET.name,weapon:G.pick}));break}
     case'n_start':if(NET.role==='host'&&NET.players.length){if(NET.auth)netSend({t:'start',diff:G.diff});else{netSend({t:'start'});netHostStart()}}break;
     case'n_leave':netLeave();break;
