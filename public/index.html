@@ -430,6 +430,10 @@ html[data-plat=pc] .go.ghost:hover{background:#1d2045;border-color:var(--lav2)}
 input[type=range]{accent-color:var(--pink)}
 .tbl{border:2px solid var(--line);border-radius:10px;font-family:var(--display);background:var(--navy2)}
 .tr.me{background:rgba(255,210,63,.12);color:var(--you)}
+.mSteps{display:flex;gap:8px;margin:6px 0 16px;flex-wrap:wrap}.mSteps span{display:flex;align-items:center;gap:6px;font-size:12px;opacity:.45}.mSteps span::before{content:'';display:none}.mSteps span{counter-increment:none}.mSteps span b{font-weight:700;letter-spacing:.06em;text-transform:uppercase}.mSteps span.on{opacity:1;color:var(--you)}.mSteps span.done{opacity:.8}.mSteps span{padding:4px 10px;border:1px solid var(--line);border-radius:999px}.mSteps span.on{border-color:var(--you)}
+.mNav{display:flex;justify-content:space-between;gap:10px;margin-top:14px;position:sticky;bottom:0;z-index:3;background:var(--void);padding:10px 0 14px}.mNav .go{flex:1;max-width:48%}
+.mBig{display:grid;gap:10px}.mBig .go{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:16px 18px}.mBig .go small{display:block;font-size:12px;font-weight:500;letter-spacing:0;text-transform:none;opacity:.75;margin-top:4px}
+.mCard{border:2px solid var(--line);border-radius:12px;padding:16px;margin:6px 0 10px;background:var(--navy2)}.mCardH{font-size:22px;font-weight:800;margin-bottom:6px}.mEdit{display:flex;gap:8px;margin-top:10px}.mEdit button{font:inherit;font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer}
 .tr.lrow{grid-template-columns:28px 1fr auto;background:none;border:0;border-top:1px solid var(--line);color:inherit;font:inherit;padding:10px 12px;min-height:48px}.tr.lrow:first-child{border-top:0}.tr.lrow small{opacity:.7}.tr.lrow:hover:not([disabled]),.tr.lrow:focus-visible{background:rgba(255,255,255,.07)}
 .how,.build{font-family:var(--display)}
 #panel.elim{background:#140b16;border-color:var(--pink)}
@@ -5305,7 +5309,7 @@ const DISP=window.DISP=(()=>{
   if(mq&&mq.addEventListener)mq.addEventListener('change',()=>{if(s.hc===undefined)api.apply()});
   api.apply();return api;
 })();
-function menu(){
+function menuClassic(){
   setTimeout(()=>{if(G.mode==='menu')ov.classList.add('bpMenu')},0);G.mode='menu';G.P=null;G.daily=null;showHUD(false);G.siege=false;G.sg=null;sgHudShow(false);
   show(`<p class="eyebrow">Battle royale · 1v1 · 2v2 · you vs the bots</p>
   <h1>Horde <em>Brawl</em></h1>
@@ -5379,6 +5383,8 @@ panel.addEventListener('click',e=>{
     case 'gmap':G.gmap=v;save();panel.querySelectorAll('[data-act=gmap]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===v));break;
     case 'wep':G.pick=v;save();if(NET.code)netSend({t:'upd',weapon:v});panel.querySelectorAll('[data-act=wep]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===v));{const d=document.getElementById('bpHero');if(d)d.innerHTML=bpHeroDetail(v)}break;
     case 'start':case 'again':startMatch();break;
+    case 'mv':MENU.st=v;menu();break;
+    case 'mov':if(v==='go')netReadForm();MENU.ost=v;netMenu();break;
     case 'tutwatch':tutPlay(G.gmode,null);break;
     case 'menu':if(NET.code||NET.m){netLeave();break}menu();break;
     case 'ach':achView();break;
@@ -7228,6 +7234,83 @@ function netMenu(){
   <details class="how"><summary>Server address</summary><input class="nin" id="nSrv" placeholder="Leave empty to use this site" value="${esc(srv)}" autocomplete="off"><p class="lede">Only change this if you host the server somewhere else, e.g. wss://your-app.onrender.com/ws</p></details>
   <button class="go ghost" data-act="menu">Back to solo menu</button>`);
 }
+/* ===== Staged main + online menus: one decision per screen (Mode -> Hero -> Match -> Ready; online: You -> Find a match). The old one-page menu is kept as menuClassic. ===== */
+const MENU={howHTML:`<ul>
+    <li><b>Horde Brawl kit:</b> Q is your signature, E your skill, X (or the pink ULT button) your ultimate. The ultimate charges as you deal damage, faster against players, and fills on a Tyrant kill.</li>
+    <li><b>Cards:</b> each card has a tag. Hold three cards of one tag (stacks count) to light up its set bonus. Gold rare cards break a rule. One free reroll per match.</li>
+    <li><b>The Tide:</b> the zone is a ring of the dead. Outside it the horde pours in and hunters spawn on you. Each phase brings tougher zombies, the Tyrant wakes in phase 3, and the top killer carries a bounty.</li>
+    <li class="pcOnly"><b>PC controls:</b> WASD moves · mouse aims · hold left click to fire · Space or Shift dashes · Q or right click uses your signature · E skill · X ultimate · 1 and 2 heal · Esc pauses · H hides key hints · Alt+Enter fullscreen. Rebind keys in Settings.</li>
+    <li class="phoneOnly">Left thumb anywhere on the left half moves you.</li>
+    <li class="phoneOnly">Right thumb anywhere on the right half aims and fires.</li>
+    <li>A dotted marker shows where you are aiming. Each gun has its own style and it shows that gun's real range and spread.</li>
+    <li>Tap Dash to slip through bullets. You can't be hit mid-dash.</li>
+    <li>Tap the purple Ability button to use your character's ability. It has a cooldown. On a keyboard press Q. Cinder's Molotov works differently: tap the button, then tap anywhere inside the ring to throw it there (click on a keyboard).</li>
+    <li>Torque's Rocket Jump launches him the way he moves and carries him over walls. Sabre's Lunge dashes at the nearest foe in range.</li>
+    <li>Lattice's Tesla Fence: each press throws a linked post (up to four) inside the ring that shows your reach. Foes crossing a beam take damage and slow; place a post on your first one to close the loop and electrify the inside. Argus's Thermal Scan tags every foe nearby so you and your ally see them through walls. Halcyon's Bubble Bay drops a dome that blocks every shot in both directions for a few seconds.</li>
+    <li>Veil can zoom (Z, or the Zoom button): a much tighter cone that sees much farther, while moving slower.</li>
+    <li>Blackout Pulse: now and then the lights fail. Every cone narrows, flares light a few zones, and firing lights you up for two seconds.</li>
+    <li>In 2v2, lethal damage downs you while your partner lives. Stand still beside a downed ally to revive them; a downed ally can crawl, and stands up with 35% health. A foe standing still beside you finishes you.</li>
+    <li>Bandages (+25 HP, 3s) and med kits (full heal, 8s) lie around the map. Walk over them to carry up to 5 bandages and 1 med kit. Tap the green buttons (keys 1 and 2) to use one. You move at half speed and can't fire while healing. Taking damage or dashing cancels it and you keep the item.</li>
+    <li>Door panels: the dot beside a doorway is green when the door is open, red when it is locked and grey when it is broken. Stand next to a panel and tap the LOCK DOOR button (or the interact key) to lock or unlock it. Locked doors slow foes and zombies down until they break through.</li>
+    <li>Map markers: green corner ticks show the corners of a building, and small green dots show doorways and narrow gaps between walls. Blue shield icons are armor pickups. They are not the same as the door-panel dot, which only shows whether a door is open, locked or broken.</li>
+    <li>Armor plates (blue shields) give +50 armor, shown as a bar above your health. It soaks damage first and shaves 2 off every hit, so it shrugs off small arms fire. You can only wear one at a time and can't pick up another until it breaks.</li>
+    <li>Every character has one gun and one ability, and its own cards for both. Purple cards upgrade your ability.</li>
+    <li>Amber cards upgrade your gun. They only appear for the character you picked.</li>
+    <li>Every gun has a clip. It reloads when empty, or after you stop firing for a moment. Press R on a keyboard to reload early.</li>
+    <li>Your cone shows other fighters. Bullets are always visible. Pings mark shots fired out of sight.</li>
+    <li>Damage, kills and green orbs give XP. Each level banks an upgrade pick. You choose your picks at the end of the drop, so the action never stops.</li>
+    <li>There is no storm. A huge horde of slow zombies spawns on the red edge of the zone and shambles toward the middle, getting a little faster as time passes. They bite anyone they reach, and the edge keeps closing in, so you can't hide out there.</li>
+    <li>First to 3 drop wins takes the match.</li>
+    <li>Your cone shows zombies like anyone else. Red pings mark ones closing in from out of sight.</li>
+    <li>Once you are out, tap the left or right half to switch who you watch.</li>
+    <li>Debug mode puts 16 bots in a match with you as a spectator. Tap left or right to switch bot. The speed button sets 1×, 2×, 4× or 8×. The INFO button cycles the AI overlay: state labels and the followed bot's panel, then lines for every bot, then off. On a keyboard use the arrow keys, F for speed and Tab for the overlay.</li>
+    <li>On a keyboard: WASD to move, mouse to aim and fire, Space to dash, Q for your ability, P to pause.</li>
+  </ul>`,st:'home',ost:''};
+const mSum=()=>`${MODES[G.gmode]||'Battle royale'}${G.gmode==='br'?' · '+G.gsize+' fighters':G.gmode==='team'||G.gmode==='siege'?' · '+teamLabel(G.tsize):''} · ${G.gmap==='random'||!MAPS[G.gmap]?'Random map':MAPS[G.gmap].name} · ${cap(G.diff)} bots${(G.mods||[]).length?' · '+G.mods.map(k=>MODS[k]?MODS[k][0]:k).join(', '):''}`;
+const mHero=()=>CHARS[G.pick]?CHARS[G.pick].name:'Hero';
+const mSteps=(list,i)=>`<div class="mSteps">${list.map((s,k)=>`<span class="${k<i?'done':k===i?'on':''}">${k+1}<b>${s}</b></span>`).join('')}</div>`;
+const mNav=(back,next,nextLabel)=>`<div class="mNav">${back?`<button class="go ghost" data-act="mv" data-v="${back}">‹ Back</button>`:'<span></span>'}${next?`<button class="go" data-act="mv" data-v="${next}">${nextLabel||'Next ›'}</button>`:''}</div>`;
+const G_MODE=()=>`<div class="group"><span class="glabel">Mode</span><div class="seg">${Object.entries(MODES).map(([k,v])=>`<button data-act="gmode" data-v="${k}" aria-pressed="${G.gmode===k}">${v}</button>`).join('')}</div></div><p class="lede" id="modeNote">${modeNote()}</p>`;
+const G_TS=()=>`<div class="group" id="tsGrp" style="${G.gmode==='team'||G.gmode==='siege'?'':'display:none'}"><span class="glabel">Team size</span><div class="seg">${TSIZES.map(n=>`<button data-act="tsize" data-v="${n}" aria-pressed="${G.tsize===n}">${teamLabel(n)}</button>`).join('')}</div></div>`;
+const G_SIZE=()=>`<div class="group" id="sizeGrp" style="${G.gmode==='br'?'':'display:none'}"><label class="glabel" for="gsize">Lobby size · <b id="sizeV">${G.gsize}</b> fighters (you + ${G.gsize-1} bots)</label><input class="nin" type="range" id="gsize" min="2" max="16" value="${G.gsize}" style="padding:6px"></div>`;
+const G_MAP=()=>`<div class="group"><span class="glabel">Map</span><div class="seg" style="grid-template-columns:repeat(4,1fr)">${[['random','Random'],...Object.entries(MAPS).map(([k,v])=>[k,v.name])].map(([k,v])=>`<button data-act="gmap" data-v="${k}" aria-pressed="${G.gmap===k}">${v}</button>`).join('')}</div></div>`;
+const G_DIFF=()=>`<div class="group"><span class="glabel">Bot skill</span><div class="seg">${Object.keys(DIFF).map(k=>`<button data-act="diff" data-v="${k}" aria-pressed="${G.diff===k}">${cap(k)}</button>`).join('')}</div></div>`;
+const G_MODS=()=>`<div class="group"><span class="glabel">Modifiers · solo matches only</span><div class="seg" style="grid-template-columns:repeat(2,1fr)">${Object.entries(MODS).map(([k,m])=>`<button data-act="mod" data-v="${k}" title="${m[1]}" aria-pressed="${(G.mods||[]).includes(k)}">${m[0]}<br><small>${m[1]}</small></button>`).join('')}</div></div>`;
+const G_DISP=()=>`<div class="group"><span class="glabel">Display</span><div class="seg" style="grid-template-columns:repeat(2,1fr)"><button data-act="disp" data-v="big" aria-pressed="${DISP.big}">Larger text</button><button data-act="disp" data-v="hc" aria-pressed="${DISP.hc}">High contrast</button><button data-act="disp" data-v="cb" aria-pressed="${DISP.cb}">Colorblind-safe</button><button data-act="disp" data-v="rm" aria-pressed="${DISP.rm}">Reduce motion</button></div></div>`;
+const G_HERO=()=>`<div class="bpAbTop" id="bpAbTop">${bpHeroAbs(G.pick&&CHARS[G.pick]?G.pick:'pistol')}</div><div class="group">${bpHeroPick(1)}</div>`;
+function mHowTo(){const h=document.createElement('div');h.innerHTML=MENU.howHTML||'';return MENU.howHTML||''}
+function mShow(html){show(html);setTimeout(()=>{if(G.mode==='menu')ov.classList.add('bpMenu')},0)}
+function mPrep(){G.mode='menu';G.P=null;G.daily=null;showHUD(false);G.siege=false;G.sg=null;sgHudShow(false)}
+/* ---- Concept A: one decision per screen, numbered steps ---- */
+function menuA(){
+  mPrep();const S=MENU.st,SOLO=['Mode','Hero','Match','Ready'];
+  if(S==='mode')return mShow(`<p class="eyebrow">Solo match</p><h1>Pick a <em>mode</em></h1>${mSteps(SOLO,0)}${G_MODE()}${G_TS()}<button class="go ghost" data-act="tutwatch" type="button">Watch the tutorial for this mode</button>${mNav('home','hero')}`);
+  if(S==='hero')return mShow(`<p class="eyebrow">Solo match</p><h1>Choose your <em>hero</em></h1>${mSteps(SOLO,1)}${G_HERO()}${mNav('mode','match')}`);
+  if(S==='match')return mShow(`<p class="eyebrow">Solo match</p><h1>Set up the <em>match</em></h1>${mSteps(SOLO,2)}${G_MAP()}${G_SIZE()}${G_DIFF()}<details class="how"><summary>Modifiers (optional)</summary>${G_MODS()}</details>${mNav('hero','ready')}`);
+  if(S==='ready')return mShow(`<p class="eyebrow">Solo match</p><h1>Ready to <em>drop</em></h1>${mSteps(SOLO,3)}<div class="mCard"><div class="mCardH">${esc(mHero())}</div><div class="lede">${esc(mSum())}</div><div class="mEdit"><button data-act="mv" data-v="mode">Mode</button><button data-act="mv" data-v="hero">Hero</button><button data-act="mv" data-v="match">Match</button></div></div><div class="pfoot"><button class="go" data-act="start">Start match</button></div>${mNav('match',null)}`);
+  if(S==='more')return mShow(`<p class="eyebrow">Options</p><h1>More</h1><button class="go ghost" data-pf="settings-menu">Settings · Controls</button><button class="go ghost" data-act="mute">Sound: ${SFX.on?'on':'off'}</button>${G_DISP()}<button class="go ghost" data-act="ach">Achievements</button><button class="go ghost" data-act="mv" data-v="how">How to play</button><button class="go ghost" data-act="debug">Debug: watch bots</button>${mNav('home',null)}`);
+  if(S==='how')return mShow(`<p class="eyebrow">Help</p><h1>How to <em>play</em></h1>${MENU.howHTML}${mNav('more',null)}`);
+  MENU.st='home';
+  mShow(`<p class="eyebrow">Battle royale · 1v1 · teams · you vs the bots</p><h1>Horde <em>Brawl</em></h1>
+  <div class="mBig"><button class="go" data-act="mv" data-v="mode">Play solo<small>Pick a mode, a hero and go</small></button>
+  <button class="go ghost" data-act="online">Play online<small>Up to 16 players · lobbies &amp; passwords</small></button>
+  <button class="go ghost" data-act="daily">Daily challenge<small>${esc(dailyLabel().replace(/^Daily challenge · /,''))}</small></button>
+  <button class="go ghost" data-act="mv" data-v="more">More<small>Settings, display, achievements, how to play</small></button></div>`);
+}
+function menu(){return menuA()}
+/* ---- online menu, staged ---- */
+{netMenu=function(){
+  NET.view='menu';G.mode='menu';G.P=null;showHUD(false);let srv='';try{srv=localStorage.getItem('hordeserver')||''}catch(e){}
+  const note=`${NET.notice?`<p class="lede" style="color:var(--foe)">${esc(NET.notice)}</p>`:''}${NET.status?`<p class="lede">${esc(NET.status)}</p>`:''}`;
+  const ways=`<div class="mBig"><button class="go" data-act="n_browse"><b>Browse lobbies</b><small>See every room, 🔒 ones need a password</small></button><button class="go ghost" data-act="n_quick"><b>Quick play</b><small>Drop into the fullest open room</small></button><button class="go ghost" data-act="n_create"><b>Create a room</b><small>Name it, add a password if you want</small></button></div>
+    <div class="group"><span class="glabel">Join with a room code</span><div class="nrow"><input class="nin" id="nCode" maxlength="4" placeholder="CODE" autocomplete="off" style="text-transform:uppercase;letter-spacing:.3em;text-align:center"><button class="go" data-act="n_join">Join</button></div></div>
+    <details class="how"><summary>Server address</summary><input class="nin" id="nSrv" placeholder="Leave empty to use this site" value="${esc(srv)}" autocomplete="off"><p class="lede">Only change this if you host the server somewhere else, e.g. wss://your-app.onrender.com/ws</p></details>`;
+  {
+    if(MENU.ost!=='go'){MENU.ost='you';return mShow(`<p class="eyebrow">Online · step 1 of 2</p><h1>Who's <em>playing</em>?</h1>${note}${mSteps(['You','Find a match'],0)}<div class="group"><label class="glabel" for="nName">Your name</label><input class="nin" id="nName" maxlength="14" placeholder="Player" value="${esc(NET.name)}" autocomplete="off"></div>${G_HERO()}<div class="mNav"><button class="go ghost" data-act="menu">‹ Back</button><button class="go" data-act="mov" data-v="go">Next ›</button></div>`)}
+    return mShow(`<p class="eyebrow">Online · step 2 of 2</p><h1>Find a <em>match</em></h1>${note}${mSteps(['You','Find a match'],1)}<p class="lede">Playing as <b>${esc(NET.name||'Player')}</b> · ${esc(mHero())}</p>${ways}<div class="mNav"><button class="go ghost" data-act="mov" data-v="you">‹ Back</button></div>`);
+  }
+}}
+
 function netReadForm(){
   const n=$('#nName'),s=$('#nSrv');
   if(n){NET.name=n.value.replace(/[^\w \-.!?]/g,'').trim().slice(0,14);try{localStorage.setItem('hordename',NET.name)}catch(e){}}
