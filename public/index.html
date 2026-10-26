@@ -6487,19 +6487,19 @@ function render0(){
   }else G.specBtns=null;
   if(G.mode==='count'){
     const n=Math.ceil(G.countdown);ctx.fillStyle=COL.ink;
-    const cmpC=cmpPhone(),cd=cmpC?44:clamp(Math.min(VW,VH)*.14,56,120),cy=cmpC?hudBottom+cd*.5+4:Math.max(VH*.24,hudBottom+cd*.5+14),o1=cmpC?26:36,o2=cmpC?44:62;
+    const cmpC=cmpPhone()||document.documentElement.dataset.plat==='phone',cd=cmpC?26:clamp(Math.min(VW,VH)*.14,56,120),cy=cmpC?hudBottom+cd*.5+4:Math.max(VH*.24,hudBottom+cd*.5+14),o1=cmpC?20:36,o2=cmpC?34:62;   // phones: a small strip under the HUD so the countdown never covers the play area
     const getReady=G.countdown>3.2;ctx.font=`800 ${getReady?Math.round(cd*.5):cd}px Rubik, sans-serif`;ctx.fillText(getReady?'GET READY':n>3?'3':n<=0?(G.zmode||G.sg?'GO':'DROP'):String(n),VW/2,cy);
     {
       const st2=G.sg?`SIEGE · ${teamLabel(G.cfg.ts||2)} · DESTROY THE ENEMY GENERATOR`:G.zmode?`WAVE ${G.wave} · ${G.zTotal} ZOMBIES`:`DROP ${G.dropNo}${G.sudden?' · SUDDEN DEATH':''} · FIRST TO ${WIN_DROPS} WINS · ${N_FIGHT} FIGHTERS`;
-      ctx.save();ctx.font=cmpC?'800 11px Rubik, sans-serif':'800 14px Rubik, sans-serif';
-      const sw=Math.min(VW-24,ctx.measureText(st2).width+32),sh=24,sx=VW/2-sw/2,sy=cy+o1-17,rr=10;
+      ctx.save();ctx.font=cmpC?'800 9px Rubik, sans-serif':'800 14px Rubik, sans-serif';
+      const sw=Math.min(VW-24,ctx.measureText(st2).width+(cmpC?18:32)),sh=cmpC?16:24,sx=VW/2-sw/2,sy=cy+o1-(cmpC?12:17),rr=cmpC?7:10;
       ctx.beginPath();ctx.moveTo(sx+rr,sy);ctx.arcTo(sx+sw,sy,sx+sw,sy+sh,rr);ctx.arcTo(sx+sw,sy+sh,sx,sy+sh,rr);ctx.arcTo(sx,sy+sh,sx,sy,rr);ctx.arcTo(sx,sy,sx+sw,sy,rr);ctx.closePath();
       ctx.fillStyle='rgba(0,0,0,.72)';ctx.fill();
       ctx.strokeStyle=COL.you;ctx.lineWidth=1.5;ctx.stroke();
       ctx.textAlign='center';ctx.fillStyle='#ffffff';ctx.fillText(st2,VW/2,cy+o1,sw-16);
       ctx.restore();
     }
-    ctx.font=cmpC?'700 10px Rubik, sans-serif':'700 13px Rubik, sans-serif';ctx.fillStyle=COL.muted;
+    ctx.font=cmpC?'700 9px Rubik, sans-serif':'700 13px Rubik, sans-serif';ctx.fillStyle=COL.muted;
     if(G.dropNo===1&&!G.mouseMode&&!G.debug)ctx.fillText('LEFT THUMB MOVES · RIGHT THUMB AIMS AND FIRES',VW/2,cy+o2);
     if(G.dropNo===1&&G.mouseMode&&!G.debug&&!G.zmode){
       const pt='WASD MOVE · MOUSE AIM/FIRE · SPACE DASH · Q ABILITY',pw=Math.min(VW-24,460),ph=28,px=VW/2-pw/2,py=cy+62-19;
