@@ -51,9 +51,20 @@ test('the host can rename the room and add or remove the password', async t => {
   h.send({ t: 'roomset', room: 'Late Night', pass: 'abc' });
   await h.waitFor('players', 3000, m => m.room && m.room.name === 'Late Night' && m.room.locked);
   const g = await connect(srv); g.send({ t: 'join', code: j.code, name: 'G' }); assert.equal((await g.waitFor('err')).code, 'pass');
-  h.send({ t: 'roomset', pass: '' }); await h.waitFor('players', 3000, m => m.room && !m.room.locked);
+  h.send({ t: 'roomset', pass: '' }); await h.waitFor('players', 3000, m => m.room && m.room.name === 'Late Night' && !m.room.locked);   // (the create-time broadcast is also unlocked: match the new one)
   g.send({ t: 'join', code: j.code, name: 'G' }); await g.waitFor('joined');
   const n = await connect(srv); n.send({ t: 'join', code: j.code, name: 'N' }); await n.waitFor('joined');
   n.send({ t: 'roomset', room: 'Hijack' }); const L = await list(n);
   assert.equal(L.find(r => r.code === j.code).name, 'Late Night', 'only the host can change room settings');
+});
+
+test('every hero on the page can be picked online (server hero list matches the game)', async t => {
+  const fs = require('fs'), path = require('path');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const i = html.indexOf('const WEAPONS='), heroes = [...new Set([...html.slice(i, i + 20000).matchAll(/\n\s*([a-z]+):\{/g)].map(m => m[1]))].slice(0, 13);
+  assert.ok(heroes.includes('hammer') && heroes.includes('necro'), 'parsed the roster: ' + heroes);
+  const srv = await setup(t);
+  const h = await connect(srv); h.send({ t: 'create', name: 'Host', weapon: 'hammer' }); const j = await h.waitFor('joined');
+  assert.equal(j.players[0].weapon, 'hammer');
+  for (const w of heroes) { h.send({ t: 'upd', weapon: w }); await h.waitFor('players', 3000, m => m.players[0].weapon === w); }
 });

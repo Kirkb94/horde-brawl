@@ -57,7 +57,7 @@ const dropStats = { total: 0, rate: 0, client: 0, room: 0 };   // dropped inboun
 const SIM_MAX_CONSEC = +(process.env.SIM_MAX_CONSEC || 5);    // consecutive failed ticks before the match is ended
 const SIM_MAX_TOTAL = +(process.env.SIM_MAX_TOTAL || 30);     // total failed ticks in one match before it is ended
 const PUBLIC = path.resolve(process.env.PUBLIC_DIR || path.join(__dirname, 'public'));
-const WEAPONS = ['pistol', 'revolver', 'smg', 'rifle', 'shotgun', 'rocket', 'sword', 'sniper', 'crossbow', 'carbine', 'scorch'];
+const WEAPONS = ['pistol', 'revolver', 'smg', 'rifle', 'shotgun', 'rocket', 'sword', 'sniper', 'crossbow', 'carbine', 'scorch', 'hammer', 'necro'];   // must list every hero in the page's WEAPONS (Anvil = hammer, Mortis = necro)
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
 
 const server = http.createServer((req, res) => {
