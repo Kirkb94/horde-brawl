@@ -733,7 +733,7 @@ const KIT={
   necro:{sk:'Grave Hover',skB:'HOVER',skCd:12,skD:'Rise above the battlefield for up to 3s: you are rooted and untouchable and see much farther. Press E again, or wait, to swoop down where you aim (up to 600 away) and raise a pack of 4 crawlers',ult:'Raise Dead',ultD:'Raise a Matriarch at your aim point. She fights for you for 30s, and spiders crawl out of her, up to 40 at once'}
 };
 /* ABAL: hero ability balance (16-bot battle royale sims). q = signature cooldown (s), e = skill cooldown (s), x = ultimate charge speed (1 = normal). */
-const ABAL={"hammer":{"q":11,"x":0.75},"scorch":{"q":16,"e":7,"x":1.4},"pistol":{"q":10,"e":7,"x":1.35},"carbine":{"q":12,"e":6,"x":1.2},"rifle":{"q":12,"e":7,"x":1.15},"sword":{"q":6,"e":6,"x":1.1},"necro":{"x":1.3},"revolver":{"q":18,"x":0.9},"crossbow":{"q":17},"shotgun":{"q":23,"e":13,"x":0.9}};
+const ABAL={"hammer":{"q":11,"x":0.75},"scorch":{"q":16,"e":7,"x":1.4},"pistol":{"q":10,"e":7,"x":1.35},"carbine":{"q":12,"e":6,"x":1.2},"rifle":{"q":12,"e":7,"x":1.15},"sword":{"q":6,"e":6,"x":1.1},"necro":{"q":7.7,"e":13.2,"x":0.65},"revolver":{"q":18,"x":0.9},"crossbow":{"q":17},"shotgun":{"q":23,"e":13,"x":0.9}};
 for(const k in ABAL){const a=ABAL[k];if(a.q)CHARS[k].cd=a.q;if(a.e)KIT[k].skCd=a.e;if(a.x)KIT[k].ultK=a.x}
 const UNB={"t":6,"hp":550};
 KIT.hammer.ultD='For '+UNB.t+'s you glow with power and your max health becomes '+UNB.hp+', filled to the top. When it ends you drop back to your normal max';
@@ -3665,7 +3665,7 @@ function skCdMax(f){const fx=f.st.fx;return (1-.1*((f.rk&&f.rk.e)||0))*KIT[f.wea
 function dashCdMax(f){return DASH_CD*(1-.2*Math.min(3,(f.st&&f.st.fx.quick)||0))*(setOn(f,'mobility')?.8:1)}
 function ultGain(f,v){
   if(!f||f.zomb||!f.alive||!(v>0)||G.time<(f.ultLock||0))return; // no charge while your own ultimate is still working
-  const was=f.ult||0;f.ult=Math.min(ULT_MAX,was+v*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(1+.2*((f.rk&&f.rk.x)||0))*(1+.25*(f.st.fx.ultc||0))*(setOn(f,'ult')?1.15:1));
+  const was=f.ult||0;f.ult=Math.min(ULT_MAX,was+v*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(1+.2*((f.rk&&f.rk.x)||0))*(1+.25*(f.st.fx.ultc||0))*(setOn(f,'ult')?1.15:1));
   if(f===G.P&&!NET.srv&&was<ULT_MAX&&f.ult>=ULT_MAX&&!G.debug&&!G.ultTold){G.ultTold=true;NARR.say('vo_ult_ready',{queue:true})}
   if(f===G.P&&!NET.srv&&was<ULT_MAX&&f.ult>=ULT_MAX&&!G.debug){feedAdd(KIT[f.weapon].ult+' ready · press '+keyName((BIND.ult||['KeyX'])[0]),true);SFX.pickup&&SFX.pickup('orb',f.x,f.y)}
 }
