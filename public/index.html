@@ -838,7 +838,8 @@ const UPGRADES=[
   {id:'nburst',gun:'necro',name:'Blight Burst',desc:'Your gas balls burst into a blight cloud for 2s',max:1,w:12,mod:fxm('nburst')},
   {id:'norb',gun:'necro',name:'Hungry Blight',desc:'Gas balls deal +20% damage and turn 25% sharper',max:2,w:12,mod:m=>{fxm('norb')(m);m.pct.damage=(m.pct.damage||0)+.2}},
   {id:'charge_necro',gun:'necro',name:'Second Grave',desc:'Mortis stores +1 extra Raise Walkers, recharged over time',max:3,w:12,mod:fxm('charge')},
-  {id:'r_split',rare:1,gun:'necro',name:'Splitting Dead',desc:'Needs Grave Pact maxed. Your walkers burst into 2 crawlers when they are killed',max:1,w:14,mod:fxm('r_split')}
+  {id:'r_kin',rare:1,gun:'necro',name:'Grave Kin',desc:'Zombies treat you as one of their own: they never target you. Your walkers and blight still fight them',max:1,w:12,mod:fxm('r_kin')},
+{id:'r_split',rare:1,gun:'necro',name:'Splitting Dead',desc:'Needs Grave Pact maxed. Your walkers burst into 2 crawlers when they are killed',max:1,w:14,mod:fxm('r_split')}
 ];
 // ================= HORDE BRAWL · cards =================
 // Two tiers. Common cards are small, readable stat pieces whose value depends on the hero holding them
@@ -2587,6 +2588,7 @@ function damage(t,amt,src,b,dot){
   if(t.weapon==='necro'&&!t.zomb&&src&&src!==t&&!src.zomb&&!isAlly(t,src)){t.lastHitBy=src;t.lastHitAt=G.time}
   if(t.zomb&&!t.struct&&src&&!src.zomb&&src.weapon==='necro')return;
   if(t.movT>0&&!t.zomb&&!t.struct)return;
+  if(t.weapon==='necro'&&!t.zomb&&src&&src.zomb&&src!==t)amt*=.7;   // Mortis: the dead go easy on him (30% less from zombies)
   if(G.sg&&src&&!src.zomb&&src.team!==t.team&&(t.struct||!t.zomb))sgAggro(src,t.team);
   if(t.struct&&G.sg&&sgProt(t))return;
   if(G.sg&&t.siege==='neutral'&&src&&!src.zomb)t.lastBy=src;
@@ -5107,7 +5109,7 @@ function controlHorde(z,dt){
   if(z.stunT>0){z.latch=null;z.mv={x:0,y:0};return}z.zspd=z.zb*(z.zk==='hunter'||z.zk==='sprinter'||ZX[z.zk]?1:1+G.time/170)*(modOn('fast')?1.25:1);
   if(z.zk==='hunter'){z.lcd=Math.max(0,(z.lcd||0)-dt);
     if(z.latch){const L=z.latch;
-      if(!L.alive||L.jumpT>0||L.dashT>0||L.cloakT>0){z.latch=null;z.lcd=L.cloakT>0?3:1.5}
+      if(!L.alive||L.jumpT>0||L.dashT>0||L.cloakT>0||(L.st&&L.st.fx.r_kin)){z.latch=null;z.lcd=L.cloakT>0?3:1.5}
       else{
         z.x=L.x+z.lx;z.y=L.y+z.ly;if(!losClear(L.x,L.y,z.x,z.y)){z.lx*=.4;z.ly*=.4;z.x=L.x+z.lx;z.y=L.y+z.ly}z.mv={x:0,y:0};z.facing=Math.atan2(-z.ly,-z.lx);
         L.slowAmt=Math.min(.8,Math.max(.55,(L.slowT>0?L.slowAmt:0)+.1));L.slowT=Math.max(L.slowT,.5);
@@ -5116,13 +5118,13 @@ function controlHorde(z,dt){
   const fs=G.fighters,st=G.st,hunt=z.zk==='hunter'||!!z.elite||!!z.tyrant,SR=hunt?1000:z.zk==='sprinter'?420:ZX[z.zk]?ZX[z.zk].sight:330;let tg=null,td=1e12,tgSeen=false;
   if(z.kt>0)z.kt-=dt;
   // poor eyesight: only a narrow band straight ahead (and anything almost touching) is noticed; sound does the rest
-  for(let _i6=0,_a6=G.hum||fs;_i6<_a6.length;_i6++){const f=_a6[_i6];if(f.zomb||!f.alive||f.jumpT>0)continue;const dx=f.x-z.x,dy=f.y-z.y,dd=dx*dx+dy*dy;if(f.cloakT>0&&dd>46*46)continue;
+  for(let _i6=0,_a6=G.hum||fs;_i6<_a6.length;_i6++){const f=_a6[_i6];if(f.zomb||!f.alive||f.jumpT>0||(f.st&&f.st.fx.r_kin))continue;const dx=f.x-z.x,dy=f.y-z.y,dd=dx*dx+dy*dy;if(f.cloakT>0&&dd>46*46)continue;
     let seen=hunt?dd<SR*SR:dd<54*54;
     if(!seen&&!hunt&&dd<SR*SR&&Math.abs(angDiff(z.facing,Math.atan2(dy,dx)))<rad(22)&&losClear(z.x,z.y,f.x,f.y))seen=true;
     const kept=!seen&&z.kt>0&&z.kid===f.id&&dd<(SR*1.25)*(SR*1.25);
     if((seen||kept)&&dd<td){td=dd;tg=f;tgSeen=seen}}
   if(tg&&tgSeen){z.kt=3.5;z.kid=tg.id}
-  if(z.forceT>0){z.forceT-=dt;for(const f of fs)if(f.id===z.forceId&&f.alive&&!f.zomb){tg=f;td=(f.x-z.x)**2+(f.y-z.y)**2;tgSeen=true;break}}
+  if(z.forceT>0){z.forceT-=dt;for(const f of fs)if(f.id===z.forceId&&f.alive&&!f.zomb&&!(f.st&&f.st.fx.r_kin)){tg=f;td=(f.x-z.x)**2+(f.y-z.y)**2;tgSeen=true;break}}
   if(ZX[z.zk]&&zxBR(z,dt,tg,td)==='done')return;
   let px=tg?tg.x:st.cx+z.ox,py=tg?tg.y:st.cy+z.oy;
   if(!tg){if(!((z.hnT-=dt)>0)){z.hnT=.18+Math.random()*.1;z.hn=hearNoise(z)}const hn=z.hn;if(hn&&Math.hypot(hn.x-z.x,hn.y-z.y)>70){px=hn.x+(z.ox||0)*.3;py=hn.y+(z.oy||0)*.3;z.heard=G.time}}
