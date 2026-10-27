@@ -432,6 +432,15 @@ input[type=range]{accent-color:var(--pink)}
 .tr.me{background:rgba(255,210,63,.12);color:var(--you)}
 .mSteps{display:flex;gap:8px;margin:6px 0 16px;flex-wrap:wrap}.mSteps span{display:flex;align-items:center;gap:6px;font-size:12px;opacity:.45}.mSteps span::before{content:'';display:none}.mSteps span{counter-increment:none}.mSteps span b{font-weight:700;letter-spacing:.06em;text-transform:uppercase}.mSteps span.on{opacity:1;color:var(--you)}.mSteps span.done{opacity:.8}.mSteps span{padding:4px 10px;border:1px solid var(--line);border-radius:999px}.mSteps span.on{border-color:var(--you)}
 .mNav{display:flex;justify-content:space-between;gap:10px;margin-top:14px;position:sticky;bottom:0;z-index:3;background:var(--void);padding:10px 0 14px}.mNav .go{flex:1;max-width:48%}
+/* short screens (landscape phones): a slim bar, and room under the content so the kit cards can scroll clear of it */
+@media (max-height:520px){.mNav{margin-top:8px;padding:4px 0 6px;background:linear-gradient(transparent,var(--void) 30%)}.mNav .go{padding:7px 12px;font-size:13px;min-height:0;box-shadow:3px 3px 0 var(--pink)}#panel:has(.mNav){scroll-padding-bottom:64px}#panel:has(.mNav) .bpAbTop{margin-bottom:6px}}
+#panel .elimRe{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);justify-content:center}#panel .elimRe .go{flex:0 1 auto;font-size:13px;padding:10px 18px}
+.cfBox{display:flex;flex-direction:column;gap:10px;padding:12px;border:2px solid var(--pink);border-radius:10px;background:rgba(255,77,109,.08)}.cfBox .lede{margin:0}.cfBox .cfYes{color:#ff8fa3;border-color:#ff8fa3}
+#panel.bpPick h2 .bpCnt.bpOf,#panel.bpPick h2 .bpCnt.bpOf,#panel h2 .bpCnt.bpOf{display:inline-flex;align-items:center;justify-content:center;width:auto;height:32px;padding:0 14px;border-radius:16px;background:var(--you);color:var(--void);font-size:15px;font-style:normal;letter-spacing:.06em;white-space:nowrap;vertical-align:middle}
+.pfNote{margin:0 0 8px;padding:8px 12px;border-left:4px solid var(--you);background:rgba(255,210,63,.1);border-radius:6px;font-size:14px}
+#tutWin .tutV{position:relative;width:min(100%,128vh);margin:0 auto}#tutWin .tutV video{width:100%;max-height:none}
+#tutFix{position:absolute;display:flex;align-items:center;gap:2.2%;padding:0 2.4%;box-sizing:border-box;background:#0d0f24;border:max(2px,.25vw) solid #ff4d8d;border-radius:12px;color:#fff;font:800 clamp(10px,1.75vw,21px)/1.25 var(--display,system-ui);pointer-events:none}
+#tutFix[hidden]{display:none}#tutFix i{flex:0 0 auto;display:grid;place-items:center;width:2.4em;height:2.4em;border-radius:50%;background:#ffd23f;color:#0d0f24;font-style:normal}
 .mBig{display:grid;gap:10px}.mBig .go{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:16px 18px}.mBig .go small{display:block;font-size:12px;font-weight:500;letter-spacing:0;text-transform:none;opacity:.75;margin-top:4px}
 .mCard{border:2px solid var(--line);border-radius:12px;padding:16px;margin:6px 0 10px;background:var(--navy2)}.mCardH{font-size:22px;font-weight:800;margin-bottom:6px}.mEdit{display:flex;gap:8px;margin-top:10px}.mEdit button{font:inherit;font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer}
 .tr.lrow{grid-template-columns:28px 1fr auto;background:none;border:0;border-top:1px solid var(--line);color:inherit;font:inherit;padding:10px 12px;min-height:48px}.tr.lrow:first-child{border-top:0}.tr.lrow small{opacity:.7}.tr.lrow:hover:not([disabled]),.tr.lrow:focus-visible{background:rgba(255,255,255,.07)}
@@ -459,6 +468,11 @@ input[type=range]{accent-color:var(--pink)}
 .bpAbD b{display:block;font:800 14px var(--display);color:#fff}
 .bpAbD b span{display:inline-block;margin-left:6px;padding:0 6px;border-radius:4px;background:var(--navy);color:var(--hc);font-size:11px}
 .bpRoster{display:flex;gap:8px;overflow-x:auto;padding:10px 2px 14px;scrollbar-width:thin}
+/* PC: every hero visible, no clipped tiles. One row of 13 when the panel is wide enough, else two rows (7 + 6) */
+html[data-plat=pc] :has(> .bpRoster){container-type:inline-size}
+html[data-plat=pc] .bpRoster{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:6px;overflow:visible;padding:10px 4px 12px}
+html[data-plat=pc] .bpRoster .bpTile{width:auto;min-width:0}
+@container (max-width:900px){html[data-plat=pc] .bpRoster{grid-template-columns:repeat(7,minmax(0,1fr));row-gap:14px}html[data-plat=pc] .bpRoster .bpTile{height:104px}}
 .bpTile{flex:0 0 auto;width:78px;height:112px;padding:0!important;position:relative;overflow:hidden;border-radius:6px!important;border:0!important;
   background:linear-gradient(180deg,var(--hc),#1b1c3a 70%)!important;transform:skewX(-6deg);box-shadow:0 4px 0 #07081a;display:flex!important;flex-direction:column;align-items:center;justify-content:flex-end;gap:0!important}
 .bpTile img{position:absolute;left:50%;top:6px;width:94px;height:94px;transform:translateX(-50%) skewX(6deg);pointer-events:none}
@@ -716,7 +730,10 @@ const CHARS={
 };
 // ================= HORDE BRAWL · kit table =================
 // Q is each hero's signature from Horde Duel (CHARS.ab). E is a skill on a short cooldown. X is the ultimate.
-const ULT_MAX=100,ULT_TRICKLE=.35;
+const ULT_MAX=100,ULT_TRICKLE=1.2;   // passive charge per second (x ABAL ultK). Raised from .35 because damage now charges far less
+// ult charge per HP dealt to heroes / to zombies, per hero kill, and the most raw damage charge one hero can bank per second
+// (before the per-hero ABAL x and card multipliers, so those keep their full effect). Tuned with 16-bot sims for a first ult around 45-60 s.
+const ULT_HERO=.12,ULT_ZOMB=.06,ULT_KILL=10,ULT_SEC=3;
 const KIT={
   pistol:{sk:'Relay',skB:'RELAY',skCd:9,skD:'Swap places with your newest turret. No turret out? Drops one at your feet',ult:'Overclock',ultD:'For 7s your turrets fire 3× faster and you fire 40% faster. Drops a bonus turret'},
   revolver:{sk:'Flashpoint',skB:'FLASH',skCd:10,skD:'Every burning foe within 520 explodes for 38 damage',ult:'Wildfire',ultD:'Lobs a wall of ten fire bombs in a long line ahead of you that burns for 8s'},
@@ -739,7 +756,7 @@ const UNB={"t":6,"hp":550};
 KIT.hammer.ultD='For '+UNB.t+'s you glow with power and your max health becomes '+UNB.hp+', filled to the top. When it ends you drop back to your normal max';
 /* ABAL end */
 // the Tide: all numbers for the zombie zone live here
-const TIDE={bossPh:3,bossHp:1000,bountyEvery:9,bountyKills:3,bruteBase:.07,brutePerPh:.045,bruteMax:.25,runnerPh:2,runnerPer:.1,runnerMax:.3};
+const TIDE={bossPh:2,bossHp:1000,bountyEvery:9,bountyKills:3,bruteBase:.07,brutePerPh:.045,bruteMax:.25,brutePh:4,runnerPh:1,runnerPer:.1,runnerMax:.3};
 const fxm=(k,v=1)=>m=>{m.fx[k]=(m.fx[k]||0)+v};
 const rocketR=fx=>125*(1+.25*(fx.blast||0)+.4*(fx.blast2||0));
 const UPGRADES=[
@@ -1582,14 +1599,18 @@ function audSave(){try{localStorage.setItem('hordeaudio',JSON.stringify(AUDV))}c
 const NARR=(()=>{
   const BASES=['match_start','next_drop','count_03','count_02','count_01','count_go','start_br','start_duel','start_team','start_online','zone_warning','zone_shrinking','outside_zone','zone_final','blackout_warn','blackout_end','horde_surge','hunter','surrounded','horde_growing','boss','you_eliminated','elim_storm','elim_horde','you_kill','other_elim','streak_2','streak_3','streak_5','left_10','left_05','left_03','left_02','you_down','mate_down','enemy_down','revive_give','revive_get','mate_lost','team_one_left','no_revives','drop_win','drop_lose','drop_draw','sudden','match_point','match_win','match_win_team','match_lose','rematch','zsurv_start','wave_start','wave_clear','zsurv_over',
     'tide_runners','tide_brutes','tyrant_wake','tyrant_you','tyrant_other','bounty_you','bounty_other','ult_ready','rare_card','set_bonus'];
+  // lines the game calls that have no recording yet: they borrow an existing take through FB below, or stay silent.
+  // Remove a name from NOREC once its vo_<name>_01/_02.mp3 files land in public/audio/narrator/.
+  const NOREC=['tide_runners','tide_brutes','tyrant_wake','tyrant_you','tyrant_other','bounty_you','bounty_other','ult_ready','rare_card','set_bonus'];
   // only recorded files; add new names here as mp3s land in public/audio/narrator/ (a name without _NN is a single-take line)
-  const FILES=BASES.flatMap(b=>['_01','_02'].map(s=>'vo_'+b+s));
+  const FILES=BASES.filter(b=>!NOREC.includes(b)).flatMap(b=>['_01','_02'].map(s=>'vo_'+b+s));
   const groups={};
   for(const n of FILES){if(BASES.includes(n.slice(3)))continue;const m=/^(.*)_(\d+)$/.exec(n);if(!m)continue;(groups[m[1]]=groups[m[1]]||[]).push(n)}
   let cur=null,last={},qs=[],endT=0;
   const tnow=()=>performance.now()/1000;
   // fallback chain so later rounds are never silent while their own recordings are missing
-  const FB={vo_next_drop:'vo_match_start',vo_sudden:'vo_next_drop',vo_tyrant_wake:'vo_boss'};
+  // (vo_tyrant_you, vo_tyrant_other, vo_bounty_other, vo_ult_ready, vo_rare_card and vo_set_bonus have no fitting take yet: silent)
+  const FB={vo_next_drop:'vo_match_start',vo_sudden:'vo_next_drop',vo_tyrant_wake:'vo_boss',vo_tide_runners:'vo_horde_growing',vo_tide_brutes:'vo_horde_surge',vo_bounty_you:'vo_hunter_01'};
   function pool(g){for(let i=0;i<4&&g;i++){if(FILES.includes(g))return [g];if(groups[g]&&groups[g].length)return groups[g];g=FB[g]}return []}
   function stop(){if(cur){try{cur.pause()}catch(e){}cur=null}}
   // one voice at a time across narrator + character lines: nothing interrupts a line that is playing;
@@ -2289,10 +2310,10 @@ let STICK_R=64;const sticks={move:null,aim:null};const keys=new Set();const mous
 const PLAT={mode:'auto',auto:false,pc:false,zoomK:1,look:.35,hints:true,q:'auto',vol:1};
 const BIND_DEF={up:['KeyW'],down:['KeyS'],left:['KeyA'],right:['KeyD'],dash:['Space'],ability:['KeyQ'],zoom:['KeyZ'],band:['Digit1'],kit:['Digit2'],pause:['Escape'],hints:['KeyH'],interact:['KeyF'],skill:['KeyE'],ult:['KeyX']};
 const BIND_ALT={up:['ArrowUp'],down:['ArrowDown'],left:['ArrowLeft'],right:['ArrowRight'],dash:['ShiftLeft','ShiftRight'],ult:['KeyG'],pause:['KeyP']};
-const BIND_NAME={up:'Move up',down:'Move down',left:'Move left',right:'Move right',dash:'Dash',ability:'Signature (Q)',skill:'Skill (E)',ult:'Ultimate (X)',zoom:'Sniper zoom',band:'Bandage',kit:'Med kit',pause:'Pause',hints:'Key hints',interact:'Interact (door panel)'};
+const BIND_NAME={up:'Move up',down:'Move down',left:'Move left',right:'Move right',dash:'Dash',ability:'Signature',skill:'Skill',ult:'Ultimate',zoom:'Sniper zoom',band:'Bandage',kit:'Med kit',pause:'Pause',hints:'Key hints',interact:'Interact (door panel)'};
 let BIND={},ALT={};
-const PF={rebind:null,open:false,from:'menu'};
-function pfResetBinds(){BIND={};ALT={};for(const k in BIND_DEF)BIND[k]=BIND_DEF[k].slice();for(const k in BIND_ALT)ALT[k]=BIND_ALT[k].slice()}
+const PF={rebind:null,open:false,from:'menu',note:''};
+function pfResetBinds(){PF.note='';BIND={};ALT={};for(const k in BIND_DEF)BIND[k]=BIND_DEF[k].slice();for(const k in BIND_ALT)ALT[k]=BIND_ALT[k].slice()}
 pfResetBinds();
 const kd=a=>BIND[a].some(c=>keys.has(c))||(ALT[a]||[]).some(c=>keys.has(c));
 function keyName(c){if(!c)return'—';if(c.startsWith('Key'))return c.slice(3);if(c.startsWith('Digit'))return c.slice(5);
@@ -2305,7 +2326,8 @@ function pfDetectPC(){
 function pfSave(){try{localStorage.setItem('pf2',JSON.stringify({mode:PLAT.mode,zoomK:PLAT.zoomK,look:PLAT.look,hints:PLAT.hints,q:PLAT.q,vol:PLAT.vol,autoRl:PLAT.autoRl!==false,bind:BIND}))}catch(_){}}
 function pfLoad(){try{const o=JSON.parse(localStorage.getItem('pf2')||'null');if(!o)return;
   PLAT.mode=o.mode||'auto';PLAT.zoomK=clamp(+o.zoomK||1,.6,1.6);PLAT.look=clamp(o.look==null?.35:+o.look,0,.8);PLAT.hints=o.hints!==false;PLAT.q=o.q||'auto';PLAT.vol=clamp(o.vol==null?1:+o.vol,0,1);PLAT.autoRl=o.autoRl!==false;
-  if(o.bind)for(const k in BIND_DEF)if(Array.isArray(o.bind[k])&&o.bind[k].length)BIND[k]=o.bind[k].filter(x=>typeof x==='string').slice(0,3)}catch(_){}}
+  if(o.bind)for(const k in BIND_DEF)if(Array.isArray(o.bind[k])&&o.bind[k].length)BIND[k]=o.bind[k].filter(x=>typeof x==='string').slice(0,3);
+  for(const k in ALT)ALT[k]=ALT[k].filter(x=>!Object.values(BIND).some(l=>l.includes(x)))}catch(_){}}   // a spare key the player bound elsewhere stops doubling up
 function pfApply(){
   const pc=PLAT.mode==='pc'?true:PLAT.mode==='phone'?false:PLAT.auto;
   const changed=pc!==PLAT.pc;PLAT.pc=pc;
@@ -2336,11 +2358,18 @@ function pfHintTick(){
   pfKeys();
 }
 function pfCaptureKey(e){
-  const c=e.code,a=PF.rebind;PF.rebind=null;
+  const c=e.code,a=PF.rebind;PF.rebind=null;PF.note='';
   if(c!=='Escape'){
-    for(const o in BIND){if(o!==a)BIND[o]=BIND[o].filter(x=>x!==c);if(!BIND[o].length)BIND[o]=BIND_DEF[o].filter(x=>x!==c).slice(0,1)}
-    for(const o in ALT)ALT[o]=ALT[o].filter(x=>x!==c);
-    BIND[a]=[c];pfSave()}
+    // a key that is already in use swaps: the other action takes this action's old key
+    const old=BIND[a].slice();let sw=null;
+    for(const o in BIND){if(o===a||!BIND[o].includes(c))continue;
+      const give=old.find(x=>x!==c&&!BIND[o].includes(x));
+      BIND[o]=BIND[o].map(x=>x===c?give:x).filter(Boolean);if(!BIND[o].length)BIND[o]=BIND_DEF[o].filter(x=>x!==c).slice(0,1);sw=o}
+    let alt=null;for(const o in ALT)if(ALT[o].includes(c)){ALT[o]=ALT[o].filter(x=>x!==c);if(o!==a)alt=o}
+    BIND[a]=[c];pfSave();
+    if(sw)PF.note=`Swapped: <b>${BIND_NAME[a]}</b> is now <b>${keyName(c)}</b> and <b>${BIND_NAME[sw]}</b> moved to <b>${keyName(BIND[sw][0])}</b>.`;
+    else if(alt)PF.note=`<b>${keyName(c)}</b> is now <b>${BIND_NAME[a]}</b>. It no longer works as the spare key for ${BIND_NAME[alt]}.`;
+  }
   pfSettings();
 }
 function kbAction(e){
@@ -2370,7 +2399,7 @@ function kbAction(e){
   return false;
 }
 function pfSettings(from){
-  if(from)PF.from=from;PF.open=true;PF.rebind=PF.rebind&&from?null:PF.rebind;
+  if(from){PF.from=from;PF.note=''}PF.open=true;PF.rebind=PF.rebind&&from?null:PF.rebind;
   const seg=(act,cur,opts)=>`<div class="seg">${opts.map(o=>`<button data-pf="${act}" data-v="${o[0]}" aria-pressed="${cur===o[0]}">${o[1]}</button>`).join('')}</div>`;
   const kb=Object.keys(BIND_NAME).map(a=>`<button class="kb${PF.rebind===a?' wait':''}" data-pf="bind" data-v="${a}">${BIND_NAME[a]}<b>${PF.rebind===a?'press key':keyName(BIND[a][0])}</b></button>`).join('');
   show(`<p class="eyebrow">Settings</p>${pfTabs('ctrl')}<h2>Controls &amp; display</h2>
@@ -2382,9 +2411,15 @@ function pfSettings(from){
   <div class="pfrow"><label>View zoom (PC · wheel)</label><input type="range" data-pr="zoom" min="60" max="160" value="${Math.round(PLAT.zoomK*100)}"></div>
   <div class="row"><button class="go ghost" data-pf="hints">Key hints: ${PLAT.hints?'on':'off'}</button><button class="go ghost" data-pf="full">Fullscreen</button></div>
   <div class="group"><span class="glabel">Keyboard (click an action, then press a key)</span><div class="keys">${kb}</div>
-  <p class="how" style="margin:0">Also: Alt+Enter fullscreen · M mute · right click = ability · arrow keys, Shift and E still work. In menus, Enter confirms and 1–9 pick a card.</p></div>
+  ${PF.note?`<p class="pfNote" role="status">${PF.note}</p>`:''}
+  <p class="how" style="margin:0">Also: Alt+Enter fullscreen · M mute · right click = signature${pfAltText()}. In menus, Enter confirms and 1–9 pick a card.</p></div>
   <div class="row"><button class="go ghost" data-pf="reset">Reset keys</button><button class="go" data-pf="back">Back</button></div>`);
 }
+// the extra keys that still work next to the bindings above (arrow keys, Shift, G, P), minus any the player rebound elsewhere
+function pfAltText(){const n=a=>(ALT[a]||[]).filter((c,i,l)=>l.findIndex(x=>keyName(x)===keyName(c))===i).map(keyName);const out=[];
+  if(['up','down','left','right'].every(a=>(ALT[a]||[]).length))out.push('arrow keys move');
+  for(const [a,w] of [['dash','dashes'],['ult','ultimate'],['pause','pauses']]){const l=n(a);if(l.length)out.push(l.join(' / ')+' '+w)}
+  return out.length?' · spare keys: '+out.join(', '):''}
 function pfTabs(cur){return `<div class="seg" role="tablist" style="margin-bottom:4px">${[['ctrl','Controls & display'],['audio','Audio'],['char','Character settings']].map(t=>`<button role="tab" data-pf="tab" data-v="${t[0]}" aria-pressed="${cur===t[0]}" aria-selected="${cur===t[0]}">${t[1]}</button>`).join('')}</div>`}
 function pfChar(){
   PF.open=true;PF.sub='char';
@@ -2532,7 +2567,7 @@ function tryDash(f,dx,dy){
 function near(x,y){if(NET.m==='host')return netNear(x,y);return Math.abs(x-G.cam.x)<720&&Math.abs(y-G.cam.y)<720}
 function fireWeapon(f,echo){
   const s=f.st,fx=s.fx,n=Math.max(1,s.n),b0=WEAPONS[f.weapon];
-  if(!echo)f.shotN++;
+  if(!echo){f.shotN++;f.shUntil=0}
   const base=f.facing+(s.spin>0?Math.sin(f.t*4)*rad(s.spin)*0.3:0);
   const angs=[];
   if(n===1)angs.push(base);
@@ -2585,6 +2620,7 @@ function shieldBreak(t){
 }
 function damage(t,amt,src,b,dot){
   if(!t.alive)return;
+  if(src!==t&&spawnShielded(t)){if(!dot&&amt>0&&near(t.x,t.y)&&Math.random()<.5)burst(t.x,t.y,'#7fe8ff',4,160);return}   // spawn shield
   if(t.weapon==='necro'&&!t.zomb&&src&&src!==t&&!src.zomb&&!isAlly(t,src)){t.lastHitBy=src;t.lastHitAt=G.time}
   if(t.zomb&&!t.struct&&src&&!src.zomb&&src.weapon==='necro')return;
   if(t.movT>0&&!t.zomb&&!t.struct)return;
@@ -2620,7 +2656,7 @@ function damage(t,amt,src,b,dot){
   if(hit0&&!dot){if(t===G.P){SFX.hurt();VOICE.hurt(amt)}SFX.thwack(t.x,t.y);if(src&&!src.zomb&&!t.zomb)noise(t.x,t.y,380)}
   if(hit0){if(amt>0)t.hp-=amt;t.hitT=G.time;if(!dot){t.hitFlash=0.1;if(t.healT>0){t.healT=0;t.healKind=null}}}
   if(src){
-    if(src!==t&&!src.zomb&&src.st){if(src.st.fx.vamp&&src.alive)src.hp=Math.min(mhp(src),src.hp+full*.075*src.st.fx.vamp*(dot?.5:1));ultGain(src,full*(t.zomb?.06:.32))}
+    if(src!==t&&!src.zomb&&src.st){if(src.st.fx.vamp&&src.alive)src.hp=Math.min(mhp(src),src.hp+full*.075*src.st.fx.vamp*(dot?.5:1));ultGain(src,full*(t.zomb?ULT_ZOMB:ULT_HERO),1)}
     if(!t.zomb)gainXP(src,full);
     if(NET.m==='host'&&!dot&&(t.remote||src.remote))netNumEv(t,full,src);
     if(!dot&&(G.debug||src===G.P||t===G.P))addNum(t,full,G.debug?COL.ink:(t===G.P?COL.foe:COL.you));
@@ -3291,7 +3327,7 @@ function throwMolo(cx,cy){
 function useAbility(f){
   let extra=false;
   if(f.alive&&f.abCD>0&&f.abCh>0&&f.weapon!=='smg'&&f.dashT<=0&&f.jumpT<=0&&f.healT<=0){extra=true;f.abKeep=f.abCD;f.abCD=0}
-  const ok=useAbilityCore(f);
+  const ok=useAbilityCore(f);if(ok)f.shUntil=0;
   if(extra){if(ok)f.abCh--;f.abCD=f.abKeep}
   return ok;
 }
@@ -3304,7 +3340,7 @@ function useAbilityCore(f){
   if(k==='pistol'){
     ownerCap(f,'turret',1+(fx.twin||0));
     const p=aheadPt(f,36);
-    ds.push({kind:'turret',x:p.x,y:p.y,owner:f,t:0,life:14,hp:60,max:60,ang:f.facing,cool:.4,scanT:0,tg:null,r:14,flash:0});
+    ds.push({kind:'turret',x:p.x,y:p.y,owner:f,t:0,life:14,hp:78,max:78,ang:f.facing,cool:.4,scanT:0,tg:null,r:14,flash:0});
   }else if(k==='revolver'){
     let p=f.throwTarget;if(!p){const dd=f.isAI?f.throwD:300;p={x:f.x+Math.cos(f.facing)*dd,y:f.y+Math.sin(f.facing)*dd}}
     {const n0=fx.napalm||0,ax=p.x-f.x,ay=p.y-f.y,al=Math.hypot(ax,ay)||1; // lobbed over walls: only the landing spot must be open ground
@@ -3663,8 +3699,9 @@ function foeOf(f,e){return e!==f&&e.alive&&!e.down&&!isAlly(f,e)&&!(f.weapon==='
 function setOn(f,k){return !!(f&&f.st&&f.st.sets&&f.st.sets[k])}
 function skCdMax(f){const fx=f.st.fx;return (1-.1*((f.rk&&f.rk.e)||0))*KIT[f.weapon].skCd*(1-.2*Math.min(3,fx.skcd||0))*(setOn(f,'tech')?.85:1)}
 function dashCdMax(f){return DASH_CD*(1-.2*Math.min(3,(f.st&&f.st.fx.quick)||0))*(setOn(f,'mobility')?.8:1)}
-function ultGain(f,v){
+function ultGain(f,v,dmg){
   if(!f||f.zomb||!f.alive||!(v>0)||G.time<(f.ultLock||0))return; // no charge while your own ultimate is still working
+  if(dmg){if(!(G.time<(f.ultWinT||-9)+1)){f.ultWinT=G.time;f.ultWinV=0}v=Math.min(v,ULT_SEC-(f.ultWinV||0));if(!(v>0))return;f.ultWinV=(f.ultWinV||0)+v}   // damage charge is capped per second, so one big cast can't refill it
   const was=f.ult||0;f.ult=Math.min(ULT_MAX,was+v*(KIT[f.weapon]&&KIT[f.weapon].ultK||1)*(1+.2*((f.rk&&f.rk.x)||0))*(1+.25*(f.st.fx.ultc||0))*(setOn(f,'ult')?1.15:1));
   if(f===G.P&&!NET.srv&&was<ULT_MAX&&f.ult>=ULT_MAX&&!G.debug&&!G.ultTold){G.ultTold=true;NARR.say('vo_ult_ready',{queue:true})}
   if(f===G.P&&!NET.srv&&was<ULT_MAX&&f.ult>=ULT_MAX&&!G.debug){feedAdd(KIT[f.weapon].ult+' ready · press '+keyName((BIND.ult||['KeyX'])[0]),true);SFX.pickup&&SFX.pickup('orb',f.x,f.y)}
@@ -3673,7 +3710,8 @@ function kitNo(f,msg){if(f===G.P&&!NET.srv&&!G.debug)toastWhy(msg)}
 function beam(x1,y1,x2,y2,col,w,life){G.fx.push({kind:'beam',x:x1,y:y1,x1,y1,x2,y2,col,w,age:0,life})}
 function kfx(x,y,col){G.fx.push({kind:'ring',x,y,age:0,life:.35,r:34,col});if(near(x,y))burst(x,y,col,12,240)}
 function moveAng(f){return Math.hypot(f.mv.x,f.mv.y)>.3?Math.atan2(f.mv.y,f.mv.x):f.facing}
-function mkTurret(f,x,y){return{kind:'turret',x,y,owner:f,t:0,life:14,hp:180,max:180,ang:f.facing,cool:.4,scanT:0,tg:null,r:42,flash:0}}
+// Wren's Relay / Overclock turret: 180 -> 234 HP (+30%). Siege shop turrets get their own health in sgTurretStats.
+function mkTurret(f,x,y){return{kind:'turret',x,y,owner:f,t:0,life:14,hp:234,max:234,ang:f.facing,cool:.4,scanT:0,tg:null,r:42,flash:0}}
 // turrets take damage from anything that hurts the owner's enemies: bullets, rockets, blasts, fire, gas and blades
 const UPLINK={delay:1.5,dmg:55,root:1,mark:20};
 function uplinkStrike(d){
@@ -3950,14 +3988,14 @@ function useSkill(f){
   if(f&&f.weapon==='necro'&&f.hovT>0){necSwoop(f);return true}
   if(!f.alive||f.down||(f.skCD||0)>0||f.dashT>0||f.jumpT>0||f.cuts||f.stunT>0)return false;
   if(f.healT>0){f.healT=0;f.healKind=null}
-  if(!skillCore(f))return false;
+  if(!skillCore(f))return false;f.shUntil=0;
   f.skCD=Math.max(f.skCD||0,skCdMax(f)); // Wrecking Ball clears this later if the charge stuns
   if(f.st.fx.momentum)f.momT=1.5;if(f.st.fx.r_super)ultGain(f,15);
   SFX.ability(f);noise(f.x,f.y,420);return true;
 }
 function useUlt(f){
   if(!f.alive||f.down||(f.ult||0)<ULT_MAX||f.dashT>0||f.jumpT>0||f.cuts||f.stunT>0)return false;
-  if(!ultCore(f))return false;
+  if(!ultCore(f))return false;f.shUntil=0;
   f.ult=0;f.ultLock=G.time+(f.weapon==='rocket'?6.5:5);SFX.ability(f);noise(f.x,f.y,900);
   G.fx.push({kind:'ring',x:f.x,y:f.y,age:0,life:.6,r:70,col:'#ff5fd2'});if(near(f.x,f.y))burst(f.x,f.y,'#ff5fd2',22,320);
   if(f===G.P||near(f.x,f.y))feedAdd(`${f===G.P?'You':f.name} unleashed ${KIT[f.weapon].ult}`,f===G.P);
@@ -3995,7 +4033,7 @@ function kitKill(by,t){
   if(G.bounty===t)G.bounty=null;
   if(!by||by.zomb||by===t||!by.st)return;
   const fx=by.st.fx;
-  ultGain(by,t.zomb?(t.zk==='boss'?40:1.2):18);
+  ultGain(by,t.zomb?(t.zk==='boss'?40:1.2):ULT_KILL);
   if(!t.zomb&&fx.r_spree)by.ult=ULT_MAX;
   if(t.zomb&&fx.scav){by.hp=Math.min(mhp(by),by.hp+6*fx.scav);if(!MELEE(by.weapon))by.ammo=Math.min(by.st.clip,by.ammo+Math.ceil(by.st.clip*.15))}
   if(fx.r_chain)explode({x:t.x,y:t.y,expl:90,dmg:t.zomb?25:35,owner:by,fx:{}});
@@ -4049,9 +4087,10 @@ function kitWhyToast(k){if(G.mode!=='play'||G.debug||G.spectating)return;const w
 
 // ================= HORDE BRAWL · the Tide =================
 // The zone never burns you. It is a closing ring of the dead: outside it the horde pours in and hunters spawn on you.
-// Each shrink is a Tide phase: more brutes, runners from phase 2, the Tyrant at the heart of the zone in phase 3.
+// Each shrink is a Tide phase: more brutes, runners from TIDE.runnerPh, the Tyrant at the heart of the zone in TIDE.bossPh.
 // The drop's top killer carries a bounty and gets hunted.
-const TIDE_MSG=['','The Tide rises · phase 1','Tide phase 2 · runners join the horde','Tide phase 3 · the Tyrant wakes','Tide phase 4 · brutes everywhere','Final Tide · last stand'];
+function tideMsg(ph){if(!(ph>0))return '';if(ph>=5)return 'Final Tide · last stand';const a=[];if(ph===TIDE.runnerPh)a.push('runners join the horde');if(ph===TIDE.bossPh)a.push('the Tyrant wakes');if(ph===TIDE.brutePh)a.push('brutes everywhere');
+  return (ph===1?'The Tide rises · phase 1':'Tide phase '+ph)+(a.length?' · '+a.join(' · '):'')}
 function spawnHunters(f,n){
   let hn=0;for(const z of G.fighters)if(z.zk==='hunter'&&z.alive)hn++;
   for(let i=0;i<n&&hn<40;i++)for(let k=0;k<14;k++){const a=Math.random()*TAU,d=rnd(320,460),x=f.x+Math.cos(a)*d,y=f.y+Math.sin(a)*d;
@@ -4078,8 +4117,8 @@ function tyrantDown(t,by){
 }
 function tideStep(dt){
   const st=G.st,ph=st.ph||0;
-  if(ph>(G.tidePh||0)){G.tidePh=ph;if(TIDE_MSG[Math.min(ph,TIDE_MSG.length-1)])feedAdd(TIDE_MSG[Math.min(ph,TIDE_MSG.length-1)],true);
-    if(!G.debug&&!G.zmode){if(ph===TIDE.runnerPh)NARR.say('vo_tide_runners',{queue:true});else if(ph===4)NARR.say('vo_tide_brutes',{queue:true})}}
+  if(ph>(G.tidePh||0)){G.tidePh=ph;if(tideMsg(ph))feedAdd(tideMsg(ph),true);
+    if(!G.debug&&!G.zmode){if(ph===TIDE.runnerPh)NARR.say('vo_tide_runners',{queue:true});else if(ph===TIDE.brutePh)NARR.say('vo_tide_brutes',{queue:true})}}
   if(!G.tyrantDone&&!G.tyrant&&ph>=TIDE.bossPh)spawnTyrant(st);
   if(G.tyrant&&!G.tyrant.alive){G.tyrant=null;G.tyrantDone=true}
   G.bntT=(G.bntT===undefined?TIDE.bountyEvery:G.bntT)-dt;
@@ -4603,16 +4642,42 @@ function spawnOrb(inside,item){
 }
 // every per-life field a hero starts a drop (or a siege respawn) with
 function resetFighter(f,x,y){f.hovT=0;f.nSwoop=0;f.movT=0;f.hook=null;f.hamT=0;f.hamPend=null;f.hamLeap=0;f.upT=0;f.upLock=0;f.rootT=0;Object.assign(f,{x,y,vx:0,vy:0,hp:Math.round(mhp(f)*(modOn('curse')&&!f.zomb?.6:1)),alive:true,place:0,dropKills:0,zk:0,cool:.3,dashT:0,dashCD:0,inv:0,band:0,armor:0,kit:0,healT:0,healKind:null,defl:deflMax(f),abCh:f.st.fx.charge||0,abChT:0,deflT:0,jumpT:0,postStrike:false,swingT:0,hurtT:0,hitFlash:0,stormHit:0,pingT:0,muzzle:0,mv:{x:0,y:0},wantFire:false,ammo:f.st.clip,reloadT:0,idleT:0,queue:[],shotN:0,heat:0,stillT:0,burnT:0,slowT:0,markT:0,kbx:0,kby:0,trk:null,abCD:3,shield:0,shieldT:0,shF:0,cloakT:0,zoom:false,zoomK:0,down:false,downT:0,revP:0,finP:0,tagT:0,tagBy:-1,scanWarn:0,litT:0,fenceN:0,fenceT:0,beamCD:0,tgtPt:null,lastHit:null,ult:f.st.sets&&f.st.sets.ult?40:0,skCD:2,dash2CD:0,stunT:0,parryK:0,bulT:0,ocT:0,momT:0,cuts:null,chg:null,windUsed:false,ultLock:0})}
+// Drop spawns: heroes start at least SPAWN_MIN apart (the PC view is about 1350x760) where the map allows it.
+// A jittered lattice over the biggest square inside the opening zone, with a best-candidate fallback for odd or small maps.
+const SPAWN_MIN=1000,SPAWN_SH=6;   // SPAWN_SH: seconds of spawn shield (no damage taken; ends early when the hero attacks)
+function spawnSpread(n){
+  const m=240,R=R0*.92,ok=(x,y)=>x>m&&y>m&&x<WORLD-m&&y<WORLD-m&&Math.hypot(x-MID,y-MID)<R&&!blocked(x,y,44)&&walkAt(x,y);
+  const lo=Math.max(m,MID-R),hi=Math.min(WORLD-m,MID+R),md=L=>{let d=1e9;for(let i=0;i<L.length;i++)for(let j=i+1;j<L.length;j++)d=Math.min(d,Math.hypot(L[i].x-L[j].x,L[i].y-L[j].y));return d};
+  const pool=[];for(let k=0;k<1200&&pool.length<240;k++){const x=rnd(lo,hi),y=rnd(lo,hi);if(ok(x,y))pool.push({x,y})}   // open spots, sampled once (keeps a drop start cheap on the server)
+  const rndPt=()=>pool.length?pool[(Math.random()*pool.length)|0]:{x:MID+rnd(-200,200),y:MID+rnd(-200,200)};
+  const jit=(x0,y0,s)=>{for(let k=0;k<16;k++){const j=s*(.08+.3*k/16),x=x0+rnd(-j,j),y=y0+rnd(-j,j);if(ok(x,y))return{x,y}}return null};
+  let best=null,bd=-1;const keep=L=>{const d=L.length>1?md(L):1e9;if(d>bd){bd=d;best=L}};
+  if(n<=1)return[rndPt()];
+  const half=Math.min(MID-lo,hi-MID,R/Math.SQRT2),cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols),sx=cols>1?2*half/(cols-1):0,sy=rows>1?2*half/(rows-1):0;
+  for(let t=0;t<4&&bd<SPAWN_MIN;t++){const cells=[];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)cells.push({x:cols>1?MID-half+c*sx:MID,y:rows>1?MID-half+r*sy:MID});
+    const L=shuffle(cells).slice(0,n).map(q=>jit(q.x,q.y,Math.min(sx||sy,sy||sx))||rndPt());keep(L)}
+  for(let t=0;t<6&&bd<SPAWN_MIN;t++){const L=[rndPt()];while(L.length<n){let bc=null,b=-1;for(let c=0;c<24;c++){const q=rndPt();let d=1e9;for(const o of L)d=Math.min(d,Math.hypot(q.x-o.x,q.y-o.y));if(d>b){b=d;bc=q}}L.push(bc)}keep(L)}
+  // repair: move whoever has the closest neighbour to the open spot that is farthest from everyone else (walls can push lattice spots together)
+  const nn=(L,i,q)=>{let d=1e9;for(let j=0;j<L.length;j++)if(j!==i)d=Math.min(d,Math.hypot(q.x-L[j].x,q.y-L[j].y));return d};
+  for(let pass=0;pass<12&&bd<SPAWN_MIN;pass++){let moved=false;const ord=best.map((q,i)=>[nn(best,i,q),i]).sort((a,b)=>a[0]-b[0]);
+    for(const [d0,i] of ord){if(d0>=SPAWN_MIN)break;let bq=null,bdq=d0;for(let c=0;c<40;c++){const q=c<8?jit(best[i].x,best[i].y,900):rndPt(),d=q?nn(best,i,q):0;if(d>bdq){bdq=d;bq=q}}
+      if(bq){best[i]=bq;moved=true}}
+    bd=md(best);if(!moved)break}
+  G.spawnMinD=Math.round(bd);return shuffle(best);
+}
+function spawnShielded(f){return !!f&&!f.zomb&&f.alive&&G.time<(f.shUntil||0)}
 function startDrop(){
   G.siege=false;G.sg=null;
   G.fighters=G.fighters.filter(f=>!f.zomb);G.hzT=0;G.hzN=0;G.zKills=0;
   if(G.dropNo===1)G.drawN=0;G.sudden=!G.debug&&(G.drawN||0)>=2;G.draw=false;for(const f of G.fighters){f.deadT=0;f.dsh=undefined;f.revN=0}
-  const fs=G.fighters,a0=Math.random()*TAU,order=shuffle([...Array(N_FIGHT).keys()]);
+  mapReset();   // doors and nav first, so spawn spots are checked against this drop's map
+  const fs=G.fighters,a0=Math.random()*TAU,order=shuffle([...Array(N_FIGHT).keys()]),spr=G.cfg.mode!=='team'&&!G.zmode?spawnSpread(fs.length):null;
   fs.forEach((f,idx)=>{
     const slot=order[idx];let x=MID,y=MID;
     const tm=G.cfg.mode==='team',ti=tm?fs.slice(0,idx).filter(o=>o.team===f.team).length:0,tc=(tm?(G.cfg.ts||2)-1:0)/2;
-    for(let k=0;k<30;k++){const a=tm?a0+(f.team?Math.PI:0)+(ti-tc)*.3+rnd(-.05,.05):a0+slot*TAU/N_FIGHT+rnd(-.08,.08),r=(1450+rnd(-170,170))*G.ms;x=MID+Math.cos(a)*r;y=MID+Math.sin(a)*r;if(!blocked(x,y,44))break}
-    resetFighter(f,x,y);
+    if(spr&&spr[idx]){x=spr[idx].x;y=spr[idx].y}
+    else for(let k=0;k<30;k++){const a=tm?a0+(f.team?Math.PI:0)+(ti-tc)*.3+rnd(-.05,.05):a0+slot*TAU/N_FIGHT+rnd(-.08,.08),r=(1450+rnd(-170,170))*G.ms;x=MID+Math.cos(a)*r;y=MID+Math.sin(a)*r;if(!blocked(x,y,44))break}
+    resetFighter(f,x,y);f.shUntil=G.zmode?0:SPAWN_SH;f.ultWinT=-9;f.ultWinV=0;
     f.facing=Math.atan2(MID-y,MID-x);f.mines=mineMax(f);f.mineT=0;
     Object.assign(f.ai,{threatT:0,tid:-1,seeT:0,lastT:-99,wT:0,dodgeT:0,unstick:0,cx:x,cy:y,chkT:1,route:null,ri:0,zoneKey:'',holdT:0,path:null,pi:0,pathT:0,visited:[],orb:null});
   });
@@ -4621,12 +4686,13 @@ function startDrop(){
   G.sc={x:MID+rnd(-800,800)*G.ms,y:MID+rnd(-800,800)*G.ms};G.st=storm(0);const ins=G.ms<.99,os=G.os;
   for(let i=0,n=Math.round(40*os);i<n;i++)spawnOrb(ins);
   for(const f of G.fighters){if(f.zomb)continue;for(let b=0;b<3;b++){for(let k=0;k<20;k++){const a=Math.random()*TAU,r=rnd(90,220),x=f.x+Math.cos(a)*r,y=f.y+Math.sin(a)*r;if(x>80&&y>80&&x<WORLD-80&&y<WORLD-80&&!blocked(x,y,30)){G.orbs.push({x,y,t:Math.random()*TAU,item:'band'});break}}}}
-  mapReset();padStep(0);
+  padStep(0);
   G.orbT=1;G.cam={x:G.P.x,y:G.P.y};
   hordeInit();SFX.drop();
   NARR.say(G.sudden?'vo_sudden':G.dropNo>1?'vo_next_drop':'vo_match_start',{force:true});
   if(!G.zmode&&!G.debug&&G.dropNo>1&&G.fighters.some(f=>!f.zomb&&f.wins===WIN_DROPS-1))NARR.say('vo_match_point',{queue:true});
   G.mode='count';G.countdown=3.2+NARR.lead();hide();showHUD(true);
+  if(G.dropNo===1&&!G.zmode&&!G.debug&&G.P&&!NET.srv)feedAdd('Spawn shield: no damage for '+SPAWN_SH+'s, or until you attack',true);
 }
 
 // ---------- Zombie survival ----------
@@ -4955,7 +5021,7 @@ function hordeZombie(x,y){
   const ph=(G.st&&G.st.ph)||0,brute=Math.random()<Math.min(TIDE.bruteMax,TIDE.bruteBase+TIDE.brutePerPh*ph),z=makeZombie(brute?'brute':'walker',x,y,1);
   z.zhp=Math.round(z.zhp*hordeHpMul());z.hp=z.zhp;z.ox=rnd(-1,1)*200;z.oy=rnd(-1,1)*200;z.los=false;z.losT=Math.random()*.3;z.chkT=1;z.cx=x;z.cy=y;z.unst=0;
   z.name='A zombie';z.zb=(brute?.085:.115)*1.25*rnd(.85,1.2);z.zspd=z.zb;z.xpv=brute?35:8;z.sp=Math.random()<.5?1:-1;z.so=0;z.sT=Math.random()*.4;
-  if(!brute&&ph>=TIDE.runnerPh&&Math.random()<Math.min(TIDE.runnerMax,TIDE.runnerPer*(ph-1))){Object.assign(z,{zk:'runner',name:'A runner',r:13,zb:.36*rnd(.92,1.08),zspd:.36,zdmg:7,zrate:.8,xpv:12});z.zhp=Math.round(30*hordeHpMul());z.hp=z.zhp}
+  if(!brute&&ph>=TIDE.runnerPh&&Math.random()<Math.min(TIDE.runnerMax,TIDE.runnerPer*(ph-TIDE.runnerPh+1))){Object.assign(z,{zk:'runner',name:'A runner',r:13,zb:.36*rnd(.92,1.08),zspd:.36,zdmg:7,zrate:.8,xpv:12});z.zhp=Math.round(30*hordeHpMul());z.hp=z.zhp}
   return z;
 }
 {const _hz=hordeZombie;hordeZombie=function(x,y){const z=_hz(x,y);if(G.noZX||G.siege||G.zmode||z.zk!=='walker')return z;const r=Math.random(),dn=G.dropNo||1;if(dn>=2&&r<1/8)zxApply(z,'spitter',zxHp());else if(r>=1/8&&r<1/8+1/12)zxApply(z,'bloater',zxHp());return z}}
@@ -5245,8 +5311,9 @@ function openElim(){
   const st_=Math.max(0,Math.floor(P.deadT||G.time||0)),stm=Math.floor(st_/60)+':'+String(st_%60).padStart(2,'0');
   show(`<p class="eyebrow">Drop ${G.dropNo}</p><h2>Eliminated · #${P.place}</h2>
     <p class="lede">${who?`Eliminated by <b>${who}</b>${wn?` with <b>${wn}</b>`:''}`:'You fell'} · survived <b>${stm}</b> · <b>${left}</b> fighter${left===1?'':'s'} remained.</p>${standingsHTML(8,true)}
-    <p class="lede">${P.dropKills} kill${P.dropKills===1?'':'s'} · ${P.pts||0} pt${(P.pts||0)===1?'':'s'} this drop. ${typeof NET!=='undefined'&&NET.live?'The other fighters keep fighting':'The bots keep fighting'}. Watch the rest, or skip ahead to the results.</p>
-    <div class="row"><button class="go" data-act="spec">Spectate</button>${NET.m?'<button class="go ghost" data-act="menu">Leave match</button>':'<button class="go ghost" data-act="again">Rematch</button><button class="go ghost" data-act="skip">Skip ahead</button>'}</div>`);
+    <p class="lede">${P.dropKills} kill${P.dropKills===1?'':'s'} · ${P.pts||0} pt${(P.pts||0)===1?'':'s'} this drop. ${typeof NET!=='undefined'&&NET.live?'The other fighters keep fighting':'The bots keep fighting'}. ${NET.m?'Watch the rest, or leave the match.':'Watch the rest, or skip ahead to the results.'}</p>
+    <div class="row"><button class="go" data-act="spec">Spectate</button>${NET.m?LEAVE_BTN:'<button class="go ghost" data-act="skip">Skip ahead</button>'}</div>
+    ${NET.m?'':'<div class="row elimRe"><button class="go ghost" data-act="again" data-cf="Restart the whole match?" data-cfd="Your drop wins and cards in this match are lost." data-cfn="Cancel">Rematch · start over</button></div>'}`);
   panel.classList.add('elim');
 }
 function pickSpec(dir){
@@ -5276,14 +5343,24 @@ function cardsHTML(offs,mult){
 }
 function openLevelPick(){
   const o=offers(G.P,3);if(!o.length){G.pending=0;if(G.afterPick){G.afterPick=false;dropResults()}return}
+  if(!(G.mode==='pick'&&G.pickCtx==='level'))G.pickDone=0;   // a new run of banked picks
   G.mode='pick';G.pickCtx='level';
-  const s=G.P.st;
-  show(`<p class="eyebrow">${G.afterPick?`Drop ${G.dropNo} bonus · `:''}Level ${G.P.level-G.pending+1} reached${G.pending>1?` · ${G.pending} picks banked`:''}</p><h2>Pick an upgrade</h2>
-    <p class="wstat">${CHARS[G.P.weapon].name} · ${WEAPONS[G.P.weapon].name} · ${CHARS[G.P.weapon].ab} ${abCdMax(G.P).toFixed(0)}s · ${s.damage.toFixed(1)} dmg × ${s.n} · ${s.rate.toFixed(1)}/s · ${G.P.weapon==='sword'?'∞':s.clip} rounds · ${G.P.weapon==='sword'?'reach '+Math.round(swordReach(G.P)):Math.round(s.speed)+' speed'}</p>${setsHTML(G.P)}${cardsHTML(o,1)}${rerollHTML()}`);bpPickShow();
+  const s=G.P.st,tot=(G.pickDone||0)+G.pending;
+  show(`<p class="eyebrow">${G.afterPick?`Drop ${G.dropNo} bonus · `:''}Level ${G.P.level-G.pending+1} reached${tot>1?` · ${tot} picks banked`:''}</p><h2>Pick an upgrade</h2>
+    <p class="wstat">${CHARS[G.P.weapon].name} · ${WEAPONS[G.P.weapon].name} · ${CHARS[G.P.weapon].ab} ${abCdMax(G.P).toFixed(0)}s · ${s.damage.toFixed(1)} dmg × ${s.n} · ${s.rate.toFixed(1)}/s · ${G.P.weapon==='sword'?'∞':s.clip} rounds · ${G.P.weapon==='sword'?'reach '+Math.round(swordReach(G.P)):Math.round(s.speed)+' speed'}</p>${setsHTML(G.P)}${cardsHTML(o,1)}${rerollHTML()}${autoPickHTML(G.pending)}`);bpPickShow();
 }
+function autoPickHTML(n){return n>1?`<button class="go ghost autoPick" data-act="autopick">Auto-pick the rest (${n} cards)</button>`:''}
 
 // ---------- Overlay ----------
 const ov=$('#ov'),panel=$('#panel');
+// In-page confirm for risky buttons: a button with data-cf asks first (data-cfd = detail, data-cfn = cancel label).
+// Cancel is the primary button, so Enter keeps you in the match.
+const LEAVE_BTN='<button class="go ghost" data-act="menu" data-cf="Leave the match?" data-cfd="You drop out of this online match and a bot takes your place." data-cfn="Stay">Leave match</button>';
+function cfAsk(b){const row=b.closest('.row')||b,box=document.createElement('div'),yes=b.cloneNode(true);
+  yes.removeAttribute('data-cf');yes.classList.add('ghost','cfYes');box.className='cfBox';box.setAttribute('role','alertdialog');
+  box.innerHTML=`<p class="lede"><b>${esc(b.dataset.cf)}</b>${b.dataset.cfd?'<br>'+esc(b.dataset.cfd):''}</p><div class="row"><button class="go" type="button" data-cfno="1">${esc(b.dataset.cfn||'Cancel')}</button></div>`;
+  box.querySelector('.row').appendChild(yes);row.replaceWith(box);const no=box.querySelector('[data-cfno]');no.onclick=()=>{box.replaceWith(row)};try{no.focus()}catch(e){}}
+panel.addEventListener('click',e=>{const b=e.target.closest('[data-cf]');if(!b||!panel.contains(b))return;e.preventDefault();e.stopImmediatePropagation();cfAsk(b)},true);
 function show(html){panel.classList.remove('elim','bpPick');ov.classList.remove('bpMenu');panel.innerHTML=html;ov.hidden=false;panel.scrollTop=0;sticks.move=sticks.aim=null;mouse.down=false;dashQueued=false;abQueued=false;skQueued=false;ultQueued=false;G.molo=0}
 function hide(){ov.hidden=true}
 // Scroll cue: shows when the panel has more content below, placed above the sticky bar (.pfoot) if any
@@ -5312,7 +5389,7 @@ if(window.ResizeObserver)new ResizeObserver(panelCue).observe(panel);
 new MutationObserver(panelCue).observe(ov,{attributes:true,attributeFilter:['hidden','class']});
 new MutationObserver(()=>requestAnimationFrame(panelCue)).observe(panel,{childList:true});
 function showHUD(on){const h=$('#hud');h.hidden=!on;try{phoneArc()}catch(_){}if(!on)ZM.hidden=true;$('#bandBtn').hidden=!on;$('#kitBtn').hidden=!on;$('#abBtn').hidden=!on;$('#skBtn').hidden=!on;$('#ultBtn').hidden=!on;$('#dashBtn').hidden=!on;if(on)hudBottom=h.getBoundingClientRect().bottom}
-function modeNote(){return G.gmode==='siege'?teamLabel(G.tsize)+' Siege: one lane, two bases. Waves of red and blue zombies march every 30 s and break towers, then the generator. Earn XP and gold, spend them at your fountain (B): kit ranks, cards, heals, permanent turrets (3 each) and squads of zombies to send at the enemy (the price climbs each time you buy). Waves grow as the match goes on. Clear jungle camps for big XP, and slay a Leviathan to cut power to the enemy towers and turrets for 30 s. Destroy their generator to win.':G.gmode==='duel'?'1v1: a small arena, a light zombie horde, first to 3 round wins.':G.gmode==='team'?teamLabel(G.tsize)+': you and '+(G.tsize-1)+' bot all'+(G.tsize>2?'ies':'y')+' against '+G.tsize+' bots. Allies cannot hurt each other. Lethal damage downs you instead while a teammate lives: stand still beside a downed ally to revive them. First team to 3 round wins.':'Last one alive wins the drop. First to 3 drop wins takes the match.'}
+function modeNote(){return G.gmode==='siege'?teamLabel(G.tsize)+' Siege (solo only for now): one lane, two bases. Waves of red and blue zombies march every 30 s and break towers, then the generator. Earn XP and gold, spend them at your fountain (B): kit ranks, cards, heals, permanent turrets (3 each) and squads of zombies to send at the enemy (the price climbs each time you buy). Waves grow as the match goes on. Clear jungle camps for big XP, and slay a Leviathan to cut power to the enemy towers and turrets for 30 s. Destroy their generator to win.':G.gmode==='duel'?'1v1: a small arena, a light zombie horde, first to 3 round wins.':G.gmode==='team'?teamLabel(G.tsize)+': you and '+(G.tsize-1)+' bot all'+(G.tsize>2?'ies':'y')+' against '+G.tsize+' bots. Allies cannot hurt each other. Lethal damage downs you instead while a teammate lives: stand still beside a downed ally to revive them. First team to 3 round wins.':'Last one alive wins the drop. First to 3 drop wins takes the match.'}
 const DISP=window.DISP=(()=>{
   const K='hordedisp',root=document.documentElement;let s={};
   try{s=JSON.parse(localStorage.getItem(K)||'{}')||{}}catch(e){s={}}
@@ -5338,7 +5415,7 @@ function menuClassic(){
   <div class="group" id="sizeGrp" style="${G.gmode==='br'?'':'display:none'}"><label class="glabel" for="gsize">Lobby size · <b id="sizeV">${G.gsize}</b> fighters (you + ${G.gsize-1} bots)</label><input class="nin" type="range" id="gsize" min="2" max="16" value="${G.gsize}" style="padding:6px"></div>
   <p class="lede" id="modeNote">${modeNote()}</p>
   <button class="go ghost" data-act="tutwatch" type="button">Watch the tutorial for this mode</button>
-  <div class="group"><span class="glabel">Modifiers · solo matches only</span><div class="seg" style="grid-template-columns:repeat(2,1fr)">${Object.entries(MODS).map(([k,m])=>`<button data-act="mod" data-v="${k}" title="${m[1]}" aria-pressed="${(G.mods||[]).includes(k)}">${m[0]}<br><small>${m[1]}</small></button>`).join('')}</div></div>
+  <div class="group"><span class="glabel">Modifiers · online rooms set their own in the lobby</span><div class="seg" style="grid-template-columns:repeat(2,1fr)">${Object.entries(MODS).map(([k,m])=>`<button data-act="mod" data-v="${k}" title="${m[1]}" aria-pressed="${(G.mods||[]).includes(k)}">${m[0]}<br><small>${m[1]}</small></button>`).join('')}</div></div>
   <div class="pfoot"><button class="go" data-act="start">Start match</button></div>
   <button class="go ghost" data-act="daily">${dailyLabel()}</button>
   <button class="go ghost" data-act="online">Play online · up to 16 players</button>
@@ -5347,43 +5424,13 @@ function menuClassic(){
   <button class="go ghost" data-pf="settings-menu">Settings · Controls</button>
   <button class="go ghost" data-act="ach">Achievements</button>
   <button class="go ghost" data-act="debug">Debug: watch bots</button>
-  <details class="how"><summary>How to play</summary><ul>
-    <li><b>Horde Brawl kit:</b> Q is your signature, E your skill, X (or the pink ULT button) your ultimate. The ultimate charges as you deal damage, faster against players, and fills on a Tyrant kill.</li>
-    <li><b>Cards:</b> each card has a tag. Hold three cards of one tag (stacks count) to light up its set bonus. Gold rare cards break a rule. One free reroll per match.</li>
-    <li><b>The Tide:</b> the zone is a ring of the dead. Outside it the horde pours in and hunters spawn on you. Each phase brings tougher zombies, the Tyrant wakes in phase 3, and the top killer carries a bounty.</li>
-    <li class="pcOnly"><b>PC controls:</b> WASD moves · mouse aims · hold left click to fire · Space or Shift dashes · Q or right click uses your signature · E skill · X ultimate · 1 and 2 heal · Esc pauses · H hides key hints · Alt+Enter fullscreen. Rebind keys in Settings.</li>
-    <li class="phoneOnly">Left thumb anywhere on the left half moves you.</li>
-    <li class="phoneOnly">Right thumb anywhere on the right half aims and fires.</li>
-    <li>A dotted marker shows where you are aiming. Each gun has its own style and it shows that gun's real range and spread.</li>
-    <li>Tap Dash to slip through bullets. You can't be hit mid-dash.</li>
-    <li>Tap the purple Ability button to use your character's ability. It has a cooldown. On a keyboard press Q. Cinder's Molotov works differently: tap the button, then tap anywhere inside the ring to throw it there (click on a keyboard).</li>
-    <li>Torque's Rocket Jump launches him the way he moves and carries him over walls. Sabre's Lunge dashes at the nearest foe in range.</li>
-    <li>Lattice's Tesla Fence: each press throws a linked post (up to four) inside the ring that shows your reach. Foes crossing a beam take damage and slow; place a post on your first one to close the loop and electrify the inside. Argus's Thermal Scan tags every foe nearby so you and your ally see them through walls. Halcyon's Bubble Bay drops a dome that blocks every shot in both directions for a few seconds.</li>
-    <li>Veil can zoom (Z, or the Zoom button): a much tighter cone that sees much farther, while moving slower.</li>
-    <li>Blackout Pulse: now and then the lights fail. Every cone narrows, flares light a few zones, and firing lights you up for two seconds.</li>
-    <li>In 2v2, lethal damage downs you while your partner lives. Stand still beside a downed ally to revive them; a downed ally can crawl, and stands up with 35% health. A foe standing still beside you finishes you.</li>
-    <li>Bandages (+25 HP, 3s) and med kits (full heal, 8s) lie around the map. Walk over them to carry up to 5 bandages and 1 med kit. Tap the green buttons (keys 1 and 2) to use one. You move at half speed and can't fire while healing. Taking damage or dashing cancels it and you keep the item.</li>
-    <li>Door panels: the dot beside a doorway is green when the door is open, red when it is locked and grey when it is broken. Stand next to a panel and tap the LOCK DOOR button (or the interact key) to lock or unlock it. Locked doors slow foes and zombies down until they break through.</li>
-    <li>Map markers: green corner ticks show the corners of a building, and small green dots show doorways and narrow gaps between walls. Blue shield icons are armor pickups. They are not the same as the door-panel dot, which only shows whether a door is open, locked or broken.</li>
-    <li>Armor plates (blue shields) give +50 armor, shown as a bar above your health. It soaks damage first and shaves 2 off every hit, so it shrugs off small arms fire. You can only wear one at a time and can't pick up another until it breaks.</li>
-    <li>Every character has one gun and one ability, and its own cards for both. Purple cards upgrade your ability.</li>
-    <li>Amber cards upgrade your gun. They only appear for the character you picked.</li>
-    <li>Every gun has a clip. It reloads when empty, or after you stop firing for a moment. Press R on a keyboard to reload early.</li>
-    <li>Your cone shows other fighters. Bullets are always visible. Pings mark shots fired out of sight.</li>
-    <li>Damage, kills and green orbs give XP. Each level banks an upgrade pick. You choose your picks at the end of the drop, so the action never stops.</li>
-    <li>There is no storm. A huge horde of slow zombies spawns on the red edge of the zone and shambles toward the middle, getting a little faster as time passes. They bite anyone they reach, and the edge keeps closing in, so you can't hide out there.</li>
-    <li>First to 3 drop wins takes the match.</li>
-    <li>Your cone shows zombies like anyone else. Red pings mark ones closing in from out of sight.</li>
-    <li>Once you are out, tap the left or right half to switch who you watch.</li>
-    <li>Debug mode puts 16 bots in a match with you as a spectator. Tap left or right to switch bot. The speed button sets 1×, 2×, 4× or 8×. The INFO button cycles the AI overlay: state labels and the followed bot's panel, then lines for every bot, then off. On a keyboard use the arrow keys, F for speed and Tab for the overlay.</li>
-    <li>On a keyboard: WASD to move, mouse to aim and fire, Space to dash, Q for your ability, P to pause.</li>
-  </ul></details>`);
+  <details class="how"><summary>How to play</summary>${howList()}</details>`);
 }
 function togglePause(){if(NET.m){netTogglePause();return}
   if(G.mode==='play'||G.mode==='count'){G.prev=G.mode;G.mode='paused';
     show(`<p class="eyebrow">Drop ${G.dropNo} · ${aliveCount()} alive</p><h2>Paused</h2>${buildHTML()}
       <button class="go ghost" data-pf="settings-pause">Settings · Controls</button>
-      <div class="row"><button class="go" data-act="resume">Resume</button><button class="go ghost" data-act="menu">Quit match</button></div>`)}
+      <div class="row"><button class="go" data-act="resume">Resume</button><button class="go ghost" data-act="menu" data-cf="Quit this match?" data-cfd="Your progress in this match is lost." data-cfn="Keep playing">Quit match</button></div>`)}
   else if(G.mode==='paused'){G.mode=G.prev;hide()}
 }
 panel.addEventListener('input',e=>{const t=e.target;if(t&&t.id==='gsize'){G.gsize=+t.value;save();const v=$('#sizeV');if(v)v.parentNode.innerHTML='Lobby size · <b id="sizeV">'+G.gsize+'</b> fighters (you + '+(G.gsize-1)+' bots)'}if(t&&t.id==='nsize'&&typeof netSizeChange==='function')netSizeChange(+t.value)});
@@ -5423,8 +5470,17 @@ panel.addEventListener('click',e=>{
       if(G.pickCtx==='rare'){G.P.rarePend=Math.max(0,(G.P.rarePend||0)-1);if(G.P.rarePend>0)openRarePick();else if(G.afterPick){G.afterPick=false;dropResults()}else{G.mode='play';hide()}break}
       if(G.pickCtx==='zwave'){startWave();break}
       if(G.pickCtx==='between'){if(NET.m==='host'){netHostOwnPicked();break}for(const f of G.fighters)if(f.isAI)aiPick(f);G.dropNo++;startDrop()}
-      else{G.pending--;if(G.pending>0)openLevelPick();else if(G.afterPick){G.afterPick=false;dropResults()}else{G.mode='play';hide()}}
+      else{G.pickDone=(G.pickDone||0)+1;G.pending--;if(G.pending>0)openLevelPick();else if(G.afterPick){G.afterPick=false;dropResults()}else{G.mode='play';hide()}}
       break;
+    case 'autopick':{   // the bots' card logic (a rare if offered, else the first card) for every banked pick
+      if(NET.m==='client'){netClientAutoPick();break}
+      if(G.pickCtx!=='level'||!G.P)break;
+      const s0=Object.keys((G.P.st&&G.P.st.sets)||{}).length,took=[];
+      while(G.pending>0){const u=aiPick(G.P);if(!u)break;took.push(u.name);G.pending--}
+      G.pending=0;G.pickDone=0;if(Object.keys((G.P.st&&G.P.st.sets)||{}).length>s0)NARR.say('vo_set_bonus',{queue:true});
+      if(took.length)feedAdd('Auto-picked: '+took.join(', '),true);
+      if(G.afterPick){G.afterPick=false;dropResults()}else{G.mode='play';hide()}
+      break}
   }
 });
 
@@ -6019,7 +6075,13 @@ function drawAlert(f){
   ctx.fillStyle='#ffd23c';ctx.strokeStyle='#1a1200';ctx.lineWidth=3.5;ctx.lineJoin='round';ctx.font='900 30px Rubik, sans-serif';ctx.textAlign='center';
   ctx.strokeText('!',0,0);ctx.fillText('!',0,0);ctx.restore();
 }
+function drawSpawnSh(f){const left=f.shUntil-G.time,k=clamp(left/SPAWN_SH,0,1),blink=left<1.5?(Math.sin(G.time*22)>0?.45:1):1,r=f.r+15+Math.sin(G.time*4)*1.5;
+  ctx.save();ctx.globalAlpha=blink;const g=ctx.createRadialGradient(f.x,f.y,r*.35,f.x,f.y,r);g.addColorStop(0,'rgba(120,232,255,0)');g.addColorStop(1,'rgba(120,232,255,.34)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(f.x,f.y,r,0,TAU);ctx.fill();
+  ctx.shadowColor='#5fe3ff';ctx.shadowBlur=PERF&&PERF.half?0:14;ctx.strokeStyle='#8ff0ff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(f.x,f.y,r,0,TAU);ctx.stroke();ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.beginPath();ctx.arc(f.x,f.y,r+6,-Math.PI/2,-Math.PI/2+TAU*k);ctx.stroke();ctx.restore()}
 function drawStatus(f){
+  if(spawnShielded(f))drawSpawnSh(f);
   if(f.alertT>0&&!f.zomb)drawAlert(f);
   if(f.shield>0){const k=f.shield/Math.max(1,f.shieldMax),a0=f.shieldDir-Math.PI/2,a1=f.shieldDir+Math.PI/2;
     ctx.fillStyle=rgba('#7fd7ff',.1+.5*f.shF);ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.arc(f.x,f.y,38,a0,a1);ctx.closePath();ctx.fill();
@@ -6654,12 +6716,21 @@ function updateHUD(){
 
 // ---------- Loop ----------
 let last=performance.now();
+// Fixed-step catch-up: at 30 fps or more each frame runs one update of the real frame time (exactly as before).
+// Slower frames are spent in whole FIX_STEP updates (up to FIX_MAX a frame) so the game keeps real-time speed instead of
+// running in slow motion; anything owed beyond FIX_MAX steps is dropped (spiral-of-death guard). Rendering stays once a frame.
+// Online play is unaffected: the server runs its own fixed 30 Hz loop and clients only predict their own movement.
+const FIX_STEP=.033,FIX_MAX=3;let fixAcc=0;
 function frame(now){
-  perfTick(now-last);const dt=Math.min(.033,(now-last)/1000);last=now;
+  const raw=Math.max(0,(now-last)/1000);perfTick(now-last);const dt=Math.min(FIX_STEP,raw);last=now;
   try{
     if(REEL.on){if(G.mode!=='over')reelClose(false);else{reelUpdate(dt);drawReel();requestAnimationFrame(frame);return}}
     const steps=G.debug?((G.mode==='play'||G.mode==='ending')?SPEEDS[G.speedIdx]:1):((G.ff&&G.spectating&&G.mode==='play')?8:1);
-    const st2=(NET.m==='host'&&G.mode==='play'&&netNoHumans())?4:(NET.m?1:steps);for(let i=0;i<st2;i++)update(dt);
+    const st2=(NET.m==='host'&&G.mode==='play'&&netNoHumans())?4:(NET.m?1:steps);
+    if(st2>1){fixAcc=0;for(let i=0;i<st2;i++)update(dt)}   // fast-forward modes: no catch-up on top
+    else{fixAcc=Math.min(fixAcc+raw,FIX_STEP*FIX_MAX);
+      if(fixAcc<=FIX_STEP){update(fixAcc);fixAcc=0}
+      else for(let n=0;n<FIX_MAX&&fixAcc>=FIX_STEP;n++){update(FIX_STEP);fixAcc-=FIX_STEP}}
     perfTrim();PERF.f=!PERF.f;
     if(!PERF.half||PERF.f||G.mode!=='play'){render();updateHUD();updateUse()}
   }catch(err){console.error(err)}
@@ -6700,7 +6771,8 @@ function bpHeroDetail(k,top){if(!top&&document.getElementById('bpAbTop'))top=1;c
   if(top){const t=document.getElementById('bpAbTop');if(t)t.innerHTML=bpHeroAbs(k);return hl+bpHeroGuide(k)}
   return hl+`<div class="bpHR" style="--hc:${acc}">${bpHeroAbs(k)}</div>`}
 function bpHeroPick(top){return `<div class="bpHero${top?' bpHeroTop':''}" id="bpHero">${bpHeroDetail(G.pick&&CHARS[G.pick]?G.pick:'pistol',top)}</div><div class="weps bpRoster">${Object.keys(WEAPONS).map(k=>`<button class="wep bpTile" data-act="wep" data-v="${k}" aria-pressed="${G.pick===k}" aria-label="${CHARS[k].name}" style="--hc:${CPAL[k].acc}"><img alt="" src="${bpPortrait(k)}"><span class="wname">${CHARS[k].name}</span></button>`).join('')}</div>`}
-function bpPickShow(){panel.classList.add('bpPick');const h=panel.querySelector('h2');if(h&&!h.querySelector('.bpCnt')){const n=G.pickCtx==='rare'?1:Math.max(1,G.pending||1);h.innerHTML=(G.pickCtx==='rare'?'Select a rare augment':'Select an augment')+' <span class="bpCnt">'+n+'</span>'}}
+function bpPickShow(){panel.classList.add('bpPick');const h=panel.querySelector('h2');if(h&&!h.querySelector('.bpCnt')){const n=G.pickCtx==='rare'?1:Math.max(1,G.pending||1),tot=G.pickCtx==='level'?(G.pickDone||0)+n:n;
+  h.innerHTML=(G.pickCtx==='rare'?'Select a rare augment':'Select an augment')+(tot>1?' <span class="bpCnt bpOf" aria-live="polite">Pick '+((G.pickDone||0)+1)+' of '+tot+'</span>':' <span class="bpCnt">'+n+'</span>')}}
 function bpSetCd(el,v,cd){if(!el)return;const s=v===''||v==null?'':String(v);if(el.dataset.cd!==s)el.dataset.cd=s;el.classList.toggle('bpcd',!!cd)}
 function bpSecs(t){return t<=0?'':t<1?t.toFixed(1):String(Math.ceil(t))}
 function bpTeams(P){
@@ -6986,7 +7058,13 @@ function rlTick(){
 // ================= First-time tutorial videos: one per mode, 5 narrated steps of 6 s =================
 // tutorial/<mode>.mp4 holds the picture (captions burned in); each step's narrator line is played on top when its
 // file exists (audio/narrator/vo_tut_<mode>_<n>.mp3), so new recordings drop in without touching the video.
-const TUT={"br":{"title":"Battle royale","steps":["Eleven heroes drop into the city. The last one standing wins the drop.","Hold fire to shoot. Q, E and X unleash your signature, your skill and your ultimate.","The Tide is closing in. Stay inside the ring, or the horde will find you.","Between drops, pick an augment card. Three of one tag light up a set bonus.","Win three drops to take the match. Good luck out there."]},"siege":{"title":"Siege","steps":["Siege. Two bases, one long lane. Destroy the enemy generator to win.","Zombie waves march every thirty seconds and tear down the towers in their way.","Towers hit hard. Step into their range only while they are busy with someone else.","Spend your experience and gold at your fountain. Press B to open the shop.","Clear jungle camps for big experience, and slay a Leviathan to cut the enemy's power."]},"duel":{"title":"1v1","steps":["One on one, in a small arena. Only one of you walks out.","Out-aim your rival, and dash through their shots. You can't be hit mid-dash.","A light horde keeps the pressure on you both.","Pick augment cards between rounds to build your hero.","First to three round wins takes the duel."]},"team":{"title":"Teams","steps":["Teams. You and your allies, against the other side.","Allies can't hurt each other, so focus your fire together.","Lethal damage only downs you while a teammate still stands.","Stand still beside a downed ally to bring them back up.","The first team to three round wins takes the match."]}},TUT_STEP=6;
+const TUT={"br":{"title":"Battle royale","steps":["Sixteen fighters drop into the city. The last one standing wins the drop.","Hold fire to shoot. Q, E and X unleash your signature, your skill and your ultimate.","The Tide is closing in. Stay inside the ring, or the horde will find you.","Between drops, pick an augment card. Three of one tag light up a set bonus.","Win three drops to take the match. Good luck out there."]},"siege":{"title":"Siege","steps":["Siege. Two bases, one long lane. Destroy the enemy generator to win.","Zombie waves march every thirty seconds and tear down the towers in their way.","Towers hit hard. Step into their range only while they are busy with someone else.","Spend your experience and gold at your fountain. Press B to open the shop.","Clear jungle camps for big experience, and slay a Leviathan to cut the enemy's power."]},"duel":{"title":"1v1","steps":["One on one, in a small arena. Only one of you walks out.","Out-aim your rival, and dash through their shots. You can't be hit mid-dash.","A light horde keeps the pressure on you both.","Pick augment cards between rounds to build your hero.","First to three round wins takes the duel."]},"team":{"title":"Teams","steps":["Teams. You and your allies, against the other side.","Allies can't hurt each other, so focus your fire together.","Lethal damage only downs you while a teammate still stands.","Stand still beside a downed ally to bring them back up.","The first team to three round wins takes the match."]}},TUT_STEP=6;
+// tutorial step narration: names listed in TUT_REC play audio/narrator/vo_tut_<mode>_<n>.mp3; other steps borrow a TUT_VO take or stay silent
+const TUT_REC=[];   // e.g. 'br_1' once vo_tut_br_1.mp3 is recorded
+const TUT_VO={br:['vo_start_br_01',null,'vo_zone_warning_01',null,null]};
+const tutVo=(m,n)=>TUT_REC.includes(m+'_'+n)?'vo_tut_'+m+'_'+n:((TUT_VO[m]||[])[n-1]||null);
+// captions burned into the video that are out of date get a corrected patch drawn over them (box in % of the 1280x720 frame)
+const TUT_FIX={br:[{s:0,b:[25,66.2,50,13],t:'Sixteen fighters drop in. Last one standing wins the drop.'}]};
 const tutSeen=m=>{try{return localStorage.getItem('hordetut_'+m)==='1'}catch(e){return true}};
 const tutMark=m=>{try{localStorage.setItem('hordetut_'+m,'1')}catch(e){}};
 let tutEl=null;
@@ -6994,7 +7072,7 @@ function tutPlay(m,done){
   const D=TUT[m];if(!D){done&&done();return}
   if(tutEl)tutEl.remove();
   tutEl=document.createElement('div');tutEl.id='tutWin';tutEl.setAttribute('role','dialog');tutEl.setAttribute('aria-label',D.title+' tutorial');
-  tutEl.innerHTML=`<div class="tutBox"><div class="tutHead"><b>How to play · ${esc(D.title)}</b><span id="tutStep">1 / ${D.steps.length}</span></div><video id="tutVid" playsinline preload="auto"><source src="tutorial/${m}.webm" type="video/webm"><source src="tutorial/${m}.mp4" type="video/mp4"></video><div class="tutBar"><i id="tutProg"></i></div><div class="tutFoot"><button class="go ghost" id="tutReplay" type="button">Replay</button><button class="go" id="tutSkip" type="button">${done?'Skip · play':'Close'}</button></div></div>`;
+  tutEl.innerHTML=`<div class="tutBox"><div class="tutHead"><b>How to play · ${esc(D.title)}</b><span id="tutStep">1 / ${D.steps.length}</span></div><div class="tutV"><video id="tutVid" playsinline preload="auto"><source src="tutorial/${m}.webm" type="video/webm"><source src="tutorial/${m}.mp4" type="video/mp4"></video><div id="tutFix" hidden aria-hidden="true"></div></div><div class="tutBar"><i id="tutProg"></i></div><div class="tutFoot"><button class="go ghost" id="tutReplay" type="button">Replay</button><button class="go" id="tutSkip" type="button">${done?'Skip · play':'Close'}</button></div></div>`;
   document.body.appendChild(tutEl);
   const v=tutEl.querySelector('#tutVid'),prog=tutEl.querySelector('#tutProg'),stepEl=tutEl.querySelector('#tutStep');let said=-1,vo=null,fin=false;
   const finish=()=>{if(fin)return;fin=true;tutMark(m);try{v.pause()}catch(e){}if(vo){try{vo.pause()}catch(e){}}if(tutEl){tutEl.remove();tutEl=null}removeEventListener('keydown',key,true);done&&done()};
@@ -7002,7 +7080,8 @@ function tutPlay(m,done){
   addEventListener('keydown',key,true);
   const vol=()=>Math.max(0,Math.min(1,(typeof VOLK!=='undefined'?VOLK:1)*(typeof AUDV!=='undefined'?AUDV.narrator:1)))*(SFX.on?1:0);
   v.ontimeupdate=()=>{const t=v.currentTime,i=Math.min(D.steps.length-1,Math.floor(t/TUT_STEP));prog.style.width=(t/(v.duration||30)*100)+'%';stepEl.textContent=(i+1)+' / '+D.steps.length;
-    if(i!==said){said=i;if(vo){try{vo.pause()}catch(e){}}try{vo=new Audio('audio/narrator/vo_tut_'+m+'_'+(i+1)+'.mp3');vo.volume=vol();vo.play().catch(()=>{})}catch(e){}}};
+    if(i!==said){said=i;if(vo){try{vo.pause()}catch(e){}vo=null}const nf=tutVo(m,i+1);if(nf)try{vo=new Audio('audio/narrator/'+nf+'.mp3');vo.volume=vol();vo.play().catch(()=>{})}catch(e){}
+      const cf=(TUT_FIX[m]||[]).find(q=>q.s===i),ce=tutEl&&tutEl.querySelector('#tutFix');if(ce){ce.hidden=!cf;if(cf){Object.assign(ce.style,{left:cf.b[0]+'%',top:cf.b[1]+'%',width:cf.b[2]+'%',height:cf.b[3]+'%'});ce.innerHTML='<i>'+(i+1)+'</i><span>'+esc(cf.t)+'</span>'}}}};
   v.onended=finish;{const ls=v.querySelectorAll('source');ls[ls.length-1].addEventListener('error',finish)}
   tutEl.querySelector('#tutSkip').onclick=finish;
   tutEl.querySelector('#tutReplay').onclick=()=>{said=-1;v.currentTime=0;v.play().catch(()=>{})};
@@ -7021,7 +7100,7 @@ const NET={ws:null,role:null,m:null,live:false,pid:0,hostPid:0,code:'',players:[
   cfg:{mode:'br',size:16,map:'random'},lastSnap:0,gotSnap:false,lag:.05,pts:null,betT:0,paused:false,keyR:0,hpPrev:0,hurtT:0,waitEl:null};
 try{NET.name=localStorage.getItem('hordename')||''}catch(e){}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const FK=['x','y','facing','hp','armor','vx','vy','dashT','jumpT','jx','jy','jtx','jty','jumpMax','swingT','swingSide','muzzle','reloadT','rdT','shield','shieldDir','shieldMax','cloakT','healT','healMax','burnT','slowT','markT','hitFlash','parryT','swordOut','defl','inv','stillT','shF','hurtT','healKind','down','downT','revP','finP','tagT','tagBy','zoom','litT','fenceT','fenceN','scanWarn','stunT','parryK','bulT','ocT','hamT'];   // x, y, facing must stay first: the client reads them by position
+const FK=['x','y','facing','hp','armor','vx','vy','dashT','jumpT','jx','jy','jtx','jty','jumpMax','swingT','swingSide','muzzle','reloadT','rdT','shield','shieldDir','shieldMax','cloakT','healT','healMax','burnT','slowT','markT','hitFlash','parryT','swordOut','defl','inv','stillT','shF','hurtT','healKind','down','downT','revP','finP','tagT','tagBy','zoom','litT','fenceT','fenceN','scanWarn','stunT','parryK','bulT','ocT','hamT','shUntil'];   // x, y, facing must stay first: the client reads them by position
 const XK=['level','xp','kills','dropKills','wins','pts','zk','ammo','abCD','abCh','abChT','mines','mineT','band','kit','dashCD','hurtA','place','pend','slowAmt','dashSp','dashDir','ult','skCD','dash2CD'];
 const ZKS=['walker','brute','sprinter','hunter','runner','boss'];
 const ITM=[undefined,'band','kit','armor'];
@@ -7251,16 +7330,20 @@ function netMenu(){
   <button class="go ghost" data-act="menu">Back to solo menu</button>`);
 }
 /* ===== Staged main + online menus: one decision per screen (Mode -> Hero -> Match -> Ready; online: You -> Find a match). The old one-page menu is kept as menuClassic. ===== */
-const MENU={howHTML:`<ul>
-    <li><b>Horde Brawl kit:</b> Q is your signature, E your skill, X (or the pink ULT button) your ultimate. The ultimate charges as you deal damage, faster against players, and fills on a Tyrant kill.</li>
-    <li><b>Cards:</b> each card has a tag. Hold three cards of one tag (stacks count) to light up its set bonus. Gold rare cards break a rule. One free reroll per match.</li>
-    <li><b>The Tide:</b> the zone is a ring of the dead. Outside it the horde pours in and hunters spawn on you. Each phase brings tougher zombies, the Tyrant wakes in phase 3, and the top killer carries a bounty.</li>
-    <li class="pcOnly"><b>PC controls:</b> WASD moves · mouse aims · hold left click to fire · Space or Shift dashes · Q or right click uses your signature · E skill · X ultimate · 1 and 2 heal · Esc pauses · H hides key hints · Alt+Enter fullscreen. Rebind keys in Settings.</li>
+// How to play, built from the live key bindings and Tide numbers (shared by the staged and the classic menus)
+function howList(){const K=a=>keyName((BIND[a]||BIND_DEF[a]||[])[0]),A=a=>(ALT[a]||[]).filter(c=>c!==(BIND[a]||[])[0]).slice(0,1).map(c=>' or '+keyName(c)).join('');
+  return `<ul>
+    <li><b>Horde Brawl:</b> 16 fighters drop in, and you pick from 13 heroes. Each hero has a gun, a dash and a three-part kit.</li>
+    <li><b>Kit:</b> ${K('ability')} (or right click) is your signature, ${K('skill')} your skill, ${K('ult')} (or the pink ULT button) your ultimate. The ultimate charges as you deal damage, faster against heroes, and fills on a Tyrant kill.</li>
+    <li><b>Spawn shield:</b> everyone drops in inside a glowing bubble that blocks all damage for ${SPAWN_SH}s. Attacking (firing or using your kit) ends your own shield early.</li>
+    <li><b>Cards:</b> each card has a tag. Hold three cards of one tag (stacks count) to light up its set bonus. Gold rare cards break a rule. One free reroll per match. With several picks banked you can auto-pick the rest.</li>
+    <li><b>The Tide:</b> the zone is a ring of the dead. Outside it the horde pours in and hunters spawn on you. Each phase brings tougher zombies: runners join in phase ${TIDE.runnerPh}, the Tyrant wakes in phase ${TIDE.bossPh}, and the top killer carries a bounty.</li>
+    <li class="pcOnly"><b>PC controls:</b> ${K('up')}${K('left')}${K('down')}${K('right')} moves · mouse aims · hold left click to fire · ${K('dash')}${A('dash')} dashes · ${K('ability')} or right click uses your signature · ${K('skill')} skill · ${K('ult')}${A('ult')} ultimate · ${K('band')} and ${K('kit')} heal · ${K('pause')}${A('pause')} pauses · ${K('hints')} hides key hints · Alt+Enter fullscreen. Rebind keys in Settings.</li>
     <li class="phoneOnly">Left thumb anywhere on the left half moves you.</li>
     <li class="phoneOnly">Right thumb anywhere on the right half aims and fires.</li>
     <li>A dotted marker shows where you are aiming. Each gun has its own style and it shows that gun's real range and spread.</li>
     <li>Tap Dash to slip through bullets. You can't be hit mid-dash.</li>
-    <li>Tap the purple Ability button to use your character's ability. It has a cooldown. On a keyboard press Q. Cinder's Molotov works differently: tap the button, then tap anywhere inside the ring to throw it there (click on a keyboard).</li>
+    <li>Tap the purple Signature button (${K('ability')} on a keyboard) to use your hero's signature. It has a cooldown. The Skill button (${K('skill')}) and the pink ULT button (${K('ult')}) sit beside it. Cinder's Molotov works differently: tap the button, then tap anywhere inside the ring to throw it there (click on a keyboard).</li>
     <li>Torque's Rocket Jump launches him the way he moves and carries him over walls. Sabre's Lunge dashes at the nearest foe in range.</li>
     <li>Lattice's Tesla Fence: each press throws a linked post (up to four) inside the ring that shows your reach. Foes crossing a beam take damage and slow; place a post on your first one to close the loop and electrify the inside. Argus's Thermal Scan tags every foe nearby so you and your ally see them through walls. Halcyon's Bubble Bay drops a dome that blocks every shot in both directions for a few seconds.</li>
     <li>Veil can zoom (Z, or the Zoom button): a much tighter cone that sees much farther, while moving slower.</li>
@@ -7280,8 +7363,9 @@ const MENU={howHTML:`<ul>
     <li>Your cone shows zombies like anyone else. Red pings mark ones closing in from out of sight.</li>
     <li>Once you are out, tap the left or right half to switch who you watch.</li>
     <li>Debug mode puts 16 bots in a match with you as a spectator. Tap left or right to switch bot. The speed button sets 1×, 2×, 4× or 8×. The INFO button cycles the AI overlay: state labels and the followed bot's panel, then lines for every bot, then off. On a keyboard use the arrow keys, F for speed and Tab for the overlay.</li>
-    <li>On a keyboard: WASD to move, mouse to aim and fire, Space to dash, Q for your ability, P to pause.</li>
-  </ul>`,st:'home',ost:''};
+    <li>On a keyboard: ${K('up')}${K('left')}${K('down')}${K('right')} to move, mouse to aim and fire, ${K('dash')} to dash, ${K('ability')} signature, ${K('skill')} skill, ${K('ult')} ultimate, ${K('pause')} to pause.</li>
+  </ul>`}
+const MENU={get howHTML(){return howList()},st:'home',ost:''};
 const mSum=()=>`${MODES[G.gmode]||'Battle royale'}${G.gmode==='br'?' · '+G.gsize+' fighters':G.gmode==='team'||G.gmode==='siege'?' · '+teamLabel(G.tsize):''} · ${G.gmap==='random'||!MAPS[G.gmap]?'Random map':MAPS[G.gmap].name} · ${cap(G.diff)} bots${(G.mods||[]).length?' · '+G.mods.map(k=>MODS[k]?MODS[k][0]:k).join(', '):''}`;
 const mHero=()=>CHARS[G.pick]?CHARS[G.pick].name:'Hero';
 const mSteps=(list,i)=>`<div class="mSteps">${list.map((s,k)=>`<span class="${k<i?'done':k===i?'on':''}">${k+1}<b>${s}</b></span>`).join('')}</div>`;
@@ -7291,7 +7375,7 @@ const G_TS=()=>`<div class="group" id="tsGrp" style="${G.gmode==='team'||G.gmode
 const G_SIZE=()=>`<div class="group" id="sizeGrp" style="${G.gmode==='br'?'':'display:none'}"><label class="glabel" for="gsize">Lobby size · <b id="sizeV">${G.gsize}</b> fighters (you + ${G.gsize-1} bots)</label><input class="nin" type="range" id="gsize" min="2" max="16" value="${G.gsize}" style="padding:6px"></div>`;
 const G_MAP=()=>`<div class="group"><span class="glabel">Map</span><div class="seg" style="grid-template-columns:repeat(4,1fr)">${[['random','Random'],...Object.entries(MAPS).map(([k,v])=>[k,v.name])].map(([k,v])=>`<button data-act="gmap" data-v="${k}" aria-pressed="${G.gmap===k}">${v}</button>`).join('')}</div></div>`;
 const G_DIFF=()=>`<div class="group"><span class="glabel">Bot skill</span><div class="seg">${Object.keys(DIFF).map(k=>`<button data-act="diff" data-v="${k}" aria-pressed="${G.diff===k}">${cap(k)}</button>`).join('')}</div></div>`;
-const G_MODS=()=>`<div class="group"><span class="glabel">Modifiers · solo matches only</span><div class="seg" style="grid-template-columns:repeat(2,1fr)">${Object.entries(MODS).map(([k,m])=>`<button data-act="mod" data-v="${k}" title="${m[1]}" aria-pressed="${(G.mods||[]).includes(k)}">${m[0]}<br><small>${m[1]}</small></button>`).join('')}</div></div>`;
+const G_MODS=()=>`<div class="group"><span class="glabel">Modifiers · online rooms set their own in the lobby</span><div class="seg" style="grid-template-columns:repeat(2,1fr)">${Object.entries(MODS).map(([k,m])=>`<button data-act="mod" data-v="${k}" title="${m[1]}" aria-pressed="${(G.mods||[]).includes(k)}">${m[0]}<br><small>${m[1]}</small></button>`).join('')}</div></div>`;
 const G_DISP=()=>`<div class="group"><span class="glabel">Display</span><div class="seg" style="grid-template-columns:repeat(2,1fr)"><button data-act="disp" data-v="big" aria-pressed="${DISP.big}">Larger text</button><button data-act="disp" data-v="hc" aria-pressed="${DISP.hc}">High contrast</button><button data-act="disp" data-v="cb" aria-pressed="${DISP.cb}">Colorblind-safe</button><button data-act="disp" data-v="rm" aria-pressed="${DISP.rm}">Reduce motion</button></div></div>`;
 const G_HERO=()=>`<div class="bpAbTop" id="bpAbTop">${bpHeroAbs(G.pick&&CHARS[G.pick]?G.pick:'pistol')}</div><div class="group">${bpHeroPick(1)}</div>`;
 function mHowTo(){const h=document.createElement('div');h.innerHTML=MENU.howHTML||'';return MENU.howHTML||''}
@@ -7380,7 +7464,7 @@ function netLobby(){
   <p class="lede">${host?(NET.auth?'Share the code with friends. Empty slots are filled with bots when you start.':'Share the code with friends. Empty slots are filled with bots when you start. Keep this tab open and in front: the match runs in your browser.'):'Waiting for the room leader to start the match.'}</p>
   <div class="tbl">${NET.players.map(p=>`<div class="tr${p.pid===NET.pid?' me':''}"><span>${p.pid===NET.hostPid?'★':''}</span><span>${esc(p.name)}</span><span>${tm?tl(p.team)+' · ':''}${CHARS[p.weapon]?CHARS[p.weapon].name:''}</span></div>`).join('')}</div>
   ${tm&&me?`<div class="group"><span class="glabel">Your team</span><div class="seg"><button data-act="n_team" data-v="0" aria-pressed="${me.team!==1}">Team A</button><button data-act="n_team" data-v="1" aria-pressed="${me.team===1}">Team B</button></div></div>`:''}
-  ${host?`<div class="group"><span class="glabel">Mode</span><div class="seg">${Object.entries(MODES).filter(([k])=>k!=='siege').map(([k,v])=>`<button data-act="n_mode" data-v="${k}" aria-pressed="${cfg.mode===k}">${v}</button>`).join('')}</div></div>
+  ${host?`<div class="group"><span class="glabel">Mode</span><div class="seg">${Object.entries(MODES).filter(([k])=>k!=='siege').map(([k,v])=>`<button data-act="n_mode" data-v="${k}" aria-pressed="${cfg.mode===k}">${v}</button>`).join('')}<button type="button" disabled title="Siege is solo only for now" aria-disabled="true">Siege<br><small>solo only</small></button></div></div>
   <div class="group"><span class="glabel">Map</span><div class="seg" style="grid-template-columns:repeat(4,1fr)">${[['random','Random'],...Object.entries(MAPS).map(([k,v])=>[k,v.name])].map(([k,v])=>`<button data-act="n_map" data-v="${k}" aria-pressed="${(cfg.map||'random')===k}">${v}</button>`).join('')}</div></div>
   ${cfg.mode==='br'?`<div class="group"><label class="glabel" for="nsize">Lobby size · <b id="nsizeV">${cfg.size}</b> fighters (empty slots are bots)</label><input class="nin" type="range" id="nsize" min="${Math.max(2,NET.players.length)}" max="16" value="${cfg.size}" style="padding:6px"></div>`:`<p class="lede">${cfg.mode==='duel'?'1v1: a small arena with a light zombie horde. First to 3 round wins.':teamLabel(tsOf(cfg))+': two teams of '+tsOf(cfg)+', pick yours above. Bots fill empty team slots. Allies cannot hurt each other.'}</p>${cfg.mode==='team'&&host?`<div class="group"><span class="glabel">Team size</span><div class="seg">${TSIZES.map(n=>`<button data-act="n_tsize" data-v="${n}" aria-pressed="${tsOf(cfg)===n}">${teamLabel(n)}</button>`).join('')}</div></div>`:''}`}
   ${modGroup()}
@@ -7794,7 +7878,12 @@ function netShowOffers(first){
   const won=G.winner===P;
   show(`<p class="eyebrow">Drop ${G.dropNo} complete</p><h2>${first?(won?'You won the drop':G.draw?'Draw':'Drop over'):'Pick another upgrade'}</h2>
     ${first?`<p class="lede">${won?'Last one standing':(G.draw?'Draw, no win awarded. ':'')+'You placed #'+P.place+' of '+N_FIGHT+' with '+P.dropKills+' kill'+(P.dropKills===1?'':'s')}. First to ${WIN_DROPS} drop wins takes the match.</p>${standingsHTML(5)}`:''}
-    <p class="lede">Upgrade ${NET.tot-NET.pk+1} of ${NET.tot}. Pick yours.</p>${cardsHTML(o,1)}`);
+    <p class="lede">Upgrade ${NET.tot-NET.pk+1} of ${NET.tot}. Pick yours.</p>${cardsHTML(o,1)}${autoPickHTML(NET.pk)}`);
+  if(NET.tot>1){const h=panel.querySelector('h2');if(h)h.insertAdjacentHTML('beforeend',' <span class="bpCnt bpOf">Pick '+(NET.tot-NET.pk+1)+' of '+NET.tot+'</span>')}
+}
+function netClientAutoPick(){const P=G.P;
+  while(NET.pk>0){const o=offers(P,3);if(!o.length)break;const u=o.find(q=>q.rare)||o[0];applyUpgrade(P,u.id,1);NET.picks.push([u.id,1]);NET.pk--}
+  NET.pk=0;netClientDone();
 }
 function netClientPick(v,m){
   const P=G.P;if(v){applyUpgrade(P,v,m);NET.picks.push([v,m])}
@@ -7809,7 +7898,7 @@ function netTogglePause(){
   if(ov.hidden&&(G.mode==='play'||G.mode==='count')){NET.paused=true;
     show(`<p class="eyebrow">Drop ${G.dropNo} · ${aliveCount()} alive</p><h2>Menu</h2><p class="lede">The match keeps running while this is open.</p>${buildHTML()}
       <button class="go ghost" data-pf="settings-pause">Settings · Controls</button>
-      <div class="row"><button class="go" data-act="resume">Resume</button><button class="go ghost" data-act="menu">Leave match</button></div>`)}
+      <div class="row"><button class="go" data-act="resume">Resume</button>${LEAVE_BTN}</div>`)}
 }
 // small status line: room, ping, host stalls
 const netInfo=document.createElement('div');netInfo.id='netInfo';document.body.appendChild(netInfo);

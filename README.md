@@ -1,6 +1,6 @@
 # Horde Brawl
 
-A BAPBAP-style hero brawler built on Horde Duel. Same engine, maps, voices and online server. Two pillars drive the design: **hero kits** and **cards**. The zone is a closing ring of zombies (the Tide), not a storm.
+A BAPBAP-style hero brawler built on Horde Duel: 16 fighters per battle royale, 13 heroes to pick from. Same engine, maps, voices and online server. Two pillars drive the design: **hero kits** and **cards**. The zone is a closing ring of zombies (the Tide), not a storm.
 
 ## Pillar 1 · Hero kits
 Every hero has one readable loop. The keys are rebindable in Settings.
@@ -11,23 +11,25 @@ Every hero has one readable loop. The keys are rebindable in Settings.
 | Space | Dash | i-frames. Baiting out the other player's dash is the core mind game |
 | Q / right click | Signature | The Horde Duel ability |
 | E | Skill | New. Short cooldown |
-| X | Ultimate | New. Charges from damage you deal (players count about 5× more than zombies), kills and a slow trickle. Fills on a Tyrant kill |
+| X | Ultimate | New. Charges from damage you deal (heroes count 2× more than zombies), kills and a steady trickle (1.2 a second). Damage charge is capped per second so one big cast can't refill it. A first ult takes about 45-60 s. Fills on a Tyrant kill. Rates live in `ULT_TRICKLE`, `ULT_HERO`, `ULT_ZOMB`, `ULT_KILL`, `ULT_SEC` |
 
 | Hero | Loop | E skill | X ultimate |
 |---|---|---|---|
 | Wren | Turret network | Relay: swap places with your turret | Overclock: turrets fire 3× faster, you 40% faster |
-| Cinder | Ignite, then detonate | Flashpoint: burning foes explode | Wildfire: a wall of five fire bombs |
+| Cinder | Ignite, then detonate | Flashpoint: burning foes explode | Wildfire: a wall of ten fire bombs |
 | Haze | Tag and trap | Smoke Step: a dash that trails gas | Choke Cloud: a huge slowing gas field that shows foes through walls |
 | Aegis | Absorb, then release | Shield Bash: a charge that hits for half your barrier's HP | Bulwark: 220 HP barrier and half damage for you and allies |
-| Rampart | Pin them to walls | Bull Charge: knockback, and a wall stun | Fortress: four spiked walls |
+| Rampart | Pin them to walls | Hook: a chained hook that drags the first hero it hits back to you | Fortress: four spiked walls |
 | Veil | Stealth resets | Shadow Step: a silent blink, then cloak | Deadeye: a piercing rail shot. A kill resets Cloak |
-| Torque | Air mobility | Satchel: a delayed charge | Barrage: ten rockets around your aim |
+| Torque | Air mobility | Satchel: a delayed charge | Barrage: twenty rockets around your aim |
 | Lattice | Zone control | Overload: every post discharges | Cage: an electrified trap on the nearest foe |
-| Argus | Mark and punish | Paint: +30% damage taken from everyone | Uplink: strikes every foe you have tagged |
+| Argus | Mark and punish | Paint: +30% damage taken from everyone | Uplink: strikes every enemy hero on the map (a dash dodges it) |
 | Halcyon | Protect and pull | Backdraft: pull foes in and burn them | Sanctuary: a healing dome |
 | Sabre | Chain resets | Parry: reflects shots for 0.7s | Thousand Cuts: blink through six foes |
+| Anvil | Dive and hold | Shockwave: a rolling quake that roots, then stuns | Unbound: a few seconds of huge max health |
+| Mortis | Fight with an army | Grave Hover: rise up, then swoop and raise crawlers | Raise Dead: a Matriarch that spawns spiders |
 
-All kit numbers live in `KIT` (text and cooldowns) and in `skillCore` / `ultCore` in `public/index.html`.
+Per-hero cooldowns and ult charge speed (`x`) come from the `ABAL` table. All kit numbers live in `KIT` (text and cooldowns) and in `skillCore` / `ultCore` in `public/index.html`.
 
 ## Pillar 2 · Cards
 - **Common cards** are small stat pieces whose value depends on the kit holding them. Heavy Rounds (+2 per pellet) is huge on a shotgun, and Vampiric Rounds suits fast guns. These are Horde Duel's upgrades plus 11 new ones.
@@ -37,10 +39,12 @@ All kit numbers live in `KIT` (text and cooldowns) and in `skillCore` / `ultCore
 - Bots grab rares whenever they see one.
 
 ## The Tide (replaces the storm)
-The zone never burns you. Outside it the horde pours in and hunters spawn on you, as in Horde Duel. Each shrink is a phase. Brutes grow more common every phase, runners join from phase 2, and **the Tyrant** (a boss) rises near the middle of the zone in phase 3. It is marked on the minimap, and its health shows on the HUD. Its killer gets a full ultimate, 60 HP and a rare card. The drop's top killer (3+ kills) carries a **bounty**, and hunters spawn on them. All numbers live in `TIDE`.
+The zone never burns you. Outside it the horde pours in and hunters spawn on you, as in Horde Duel. Each shrink is a phase. Brutes grow more common every phase, runners join from phase 1 (about 20 s), and **the Tyrant** (a boss) rises near the middle of the zone in phase 2 (about 70 s). It is marked on the minimap, and its health shows on the HUD. Its killer gets a full ultimate, 60 HP and a rare card. The drop's top killer (3+ kills) carries a **bounty**, and hunters spawn on them. All numbers live in `TIDE`.
+
+**Spawns:** heroes drop at least ~1000 apart where the map allows it (`SPAWN_MIN`, `spawnSpread`), inside a spawn shield bubble that blocks all damage for 6 s (`SPAWN_SH`) and ends early when the hero attacks.
 
 ## Online
-Online works as in Horde Duel. E and X are sent as `e` and `x` input actions, and `ult`, `skCD` and the new status timers are in the snapshots. Rare picks after a Tyrant kill are auto-chosen for online players, and rerolls are solo-only for now. Effects like beams and rings are drawn locally, so remote players see the result (damage, deploys) but not every flash.
+Online works as in Horde Duel. E and X are sent as `e` and `x` input actions, and `ult`, `skCD` and the new status timers are in the snapshots. Rare picks after a Tyrant kill are auto-chosen for online players, and rerolls are solo-only for now. Siege is solo only for now (the server does not run its shop, towers and lanes). Modifiers work online too: the room leader sets them in the lobby. Effects like beams and rings are drawn locally, so remote players see the result (damage, deploys) but not every flash.
 `sim.js` stubs `MutationObserver`, `ResizeObserver` and `documentElement.classList`. The newer Horde Duel page uses them, and without the stubs the server-authoritative mode crashes on load.
 
 ---
