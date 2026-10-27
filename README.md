@@ -99,6 +99,18 @@ npm start      # http://localhost:3000
 ```
 Open it in several browser windows: create a room in one, join with the code in the others.
 
+## Releasing
+The game shows a **What's new** screen once per new version over the main menu, and the menu's *What's new* button reopens it. It reads `public/changelog.json`, a static file shipped with the game (never fetched from GitHub). If the file is missing or broken there is no screen.
+
+At push time, add the push's notes with `tools/changelog.mjs` (Node 18+, no packages). Give it the commits of the push (everything since the previous push) as JSON on stdin or with `--commits`, plus optional hand-written notes:
+```
+node tools/changelog.mjs --commits commits.json --notes notes.md
+```
+- `commits.json`: `[{"hash":"f32ae16","date":"2026-10-26T13:29:53-04:00","subject":"...","body":"..."}, ...]`
+- `notes.md`: `# Title`, then `## New` / `## Balance` / `## Fixes` / `## Visuals` headings with `- item` lines. JSON `{"title":"...","groups":[{"name":"New","items":["..."]}]}` also works. Without notes the commits are grouped by keyword (fix/bug → Fixes, balance/nerf/buff/dmg/hp → Balance, art/anim/visual/tiles → Visuals, else New). `Co-Authored-By` and `Claude-Session` lines are dropped.
+- It puts the new version first in `public/changelog.json` (the newest commit hash is the version id; re-running replaces it) and keeps the last 10. Commit the file, then push. Other options: `--out`, `--title`, `--date YYYY-MM-DD`, `--id`, `--keep`, `--dry-run`, `--help`.
+- Each player's last seen version is kept in their browser (`localStorage` key `hordenews`). Links with a room code or `?fast`, and online rejoins, skip the screen and only show the button.
+
 ## Files
 - `server.js` rooms, relay and match loop. `sim.js` runs the game's own code headlessly inside the server.
 - `public/index.html` the game (solo plus online). `dev/` has the online layer source and the build script.

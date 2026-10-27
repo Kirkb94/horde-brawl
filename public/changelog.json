@@ -1,0 +1,118 @@
+{
+  "versions": [
+    {
+      "id": "f32ae160638e",
+      "date": "2026-10-26",
+      "title": "Zombies vs barriers",
+      "groups": [
+        {
+          "name": "Fixes",
+          "items": [
+            "Zombies no longer stand frozen against Aegis's and Bulwark's barriers. They claw at them and break through"
+          ]
+        },
+        {
+          "name": "Balance",
+          "items": [
+            "Three walkers break a fresh barrier in about 2.5 seconds. Shockwave Break still triggers when it breaks"
+          ]
+        }
+      ],
+      "commits": [
+        "Zombies claw at Aegis's barrier"
+      ]
+    },
+    {
+      "id": "adb449935266",
+      "date": "2026-10-26",
+      "title": "Mortis and Grave Kin",
+      "groups": [
+        {
+          "name": "New",
+          "items": [
+            "New rare card for Mortis, Grave Kin: zombies never target or latch onto him"
+          ]
+        },
+        {
+          "name": "Balance",
+          "items": [
+            "Zombies deal 30% less damage to Mortis"
+          ]
+        }
+      ],
+      "commits": [
+        "Grave Kin: card text matches what it does",
+        "Mortis: zombies deal 30% less to him; new rare card Grave Kin"
+      ]
+    },
+    {
+      "id": "9cbaca30daa6",
+      "date": "2026-10-26",
+      "title": "Hero balance pass",
+      "groups": [
+        {
+          "name": "Balance",
+          "items": [
+            "Every hero's cooldowns and ultimate charge speed were retuned after 900 bot battle royales",
+            "Anvil's Unbound: 550 HP for 6 s (was 1000 HP for 10 s)",
+            "Halcyon's Backdraft burns for 14 per second over 4 s (was 6 per second over 3 s)",
+            "Aegis's Shield Bash hits for 45 (was 30). Sabre's Thousand Cuts deals 55 per foe (was 45)"
+          ]
+        }
+      ],
+      "commits": [
+        "Hero ability balance pass (900 bot battle royales)"
+      ]
+    },
+    {
+      "id": "dfde2a71abbc",
+      "date": "2026-10-26",
+      "title": "Phone countdown",
+      "groups": [
+        {
+          "name": "Fixes",
+          "items": [
+            "On phones the match countdown is a small strip under the HUD, so it never covers the play area"
+          ]
+        }
+      ],
+      "commits": [
+        "Update from Renegade Dev Console"
+      ]
+    },
+    {
+      "id": "c45ac4bf62a5",
+      "date": "2026-10-26",
+      "title": "Anvil and Mortis online",
+      "groups": [
+        {
+          "name": "Fixes",
+          "items": [
+            "Anvil and Mortis can now be picked in online games"
+          ]
+        }
+      ],
+      "commits": [
+        "Update from Renegade Dev Console"
+      ]
+    },
+    {
+      "id": "fe1a88260f4d",
+      "date": "2026-10-26",
+      "title": "A cleaner main menu",
+      "groups": [
+        {
+          "name": "New",
+          "items": [
+            "The main menu is now four choices: Play solo, Play online, Daily challenge and More",
+            "Solo walks you through Mode, Hero, Match and Ready, with a summary card before you start",
+            "Online asks for your name and hero, then lets you browse lobbies, quick play, create a room or join with a code"
+          ]
+        }
+      ],
+      "commits": [
+        "Staged main and online menus"
+      ]
+    }
+  ]
+}

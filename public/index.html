@@ -594,6 +594,65 @@ html[data-plat=phone] #panel:has(#bpAbTop) .pfoot .go{padding:9px 14px;font-size
 }
 #bpHGTog{display:none}
 </style>
+<style id="hbNewsCss">
+/* What's new: update notes from public/changelog.json (written at push time by tools/changelog.mjs), BAPBAP-skin panel over the menu */
+#hbNews{position:fixed;inset:0;z-index:290;display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));background-color:rgba(11,12,26,.86);background-image:radial-gradient(rgba(143,140,182,.14) 1px,transparent 1.6px);background-size:14px 14px;font-family:var(--display);color:var(--ink);touch-action:pan-y;user-select:text;-webkit-user-select:text}
+#hbNews[hidden]{display:none}
+#hbNews *{box-sizing:border-box}
+#hbNews .hnCard{position:relative;width:min(620px,100%);max-height:min(820px,100%);display:flex;flex-direction:column;background:var(--panel);border:3px solid var(--void);border-radius:14px;box-shadow:0 0 0 2px var(--line),7px 7px 0 2px var(--pink);animation:hnIn .2s ease-out}
+#hbNews .hnHead{padding:20px 64px 14px 22px;border-bottom:2px solid var(--line)}
+#hbNews .hnK{margin:0;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--pink)}
+#hbNews h2{margin:8px 0 0;font-size:28px;line-height:1.08;font-weight:900;font-style:italic;color:#fff;-webkit-text-stroke:1.5px var(--void);paint-order:stroke fill;text-shadow:3px 3px 0 var(--pink);transform:skewX(-6deg);transform-origin:left;text-wrap:balance}
+#hbNews .hnMeta{margin:8px 0 0;font-size:13px;font-weight:600;color:var(--muted)}
+#hbNews .hnMeta code{font:700 12px var(--display);letter-spacing:.06em;color:var(--lav);background:var(--navy);border-radius:6px;padding:2px 7px}
+#hbNews .hnBody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:6px 22px 16px;outline:0;scrollbar-color:var(--line) transparent}
+#hbNews .hnG{margin:16px 0 0}
+#hbNews .hnG h3{display:inline-block;margin:0 0 8px;padding:4px 10px 3px;border-radius:6px;font-size:12px;font-weight:900;font-style:italic;letter-spacing:.12em;text-transform:uppercase;color:var(--void);background:var(--gc,var(--you));box-shadow:2px 2px 0 var(--void)}
+#hbNews .hnG.g-new{--gc:var(--you)}#hbNews .hnG.g-balance{--gc:var(--pink);}#hbNews .hnG.g-balance h3{color:#fff}#hbNews .hnG.g-fixes{--gc:#3ee08f}#hbNews .hnG.g-visuals{--gc:var(--hc)}
+#hbNews .hnG ul{margin:0;padding:0;list-style:none}
+#hbNews .hnG li{position:relative;margin:0;padding:6px 0 6px 20px;font-size:15px;font-weight:500;line-height:1.45;color:var(--ink)}
+#hbNews .hnG li::before{content:"";position:absolute;left:3px;top:13px;width:8px;height:8px;border-radius:2px;background:var(--gc,var(--you));transform:rotate(45deg)}
+#hbNews details{margin:16px 0 0;border-top:2px dashed var(--line);padding-top:10px}
+#hbNews summary{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:2px 6px 2px 2px;cursor:pointer;list-style:none;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--lav2);border-radius:6px}
+#hbNews summary::-webkit-details-marker{display:none}
+#hbNews summary::before{content:"";width:0;height:0;border-left:7px solid var(--pink);border-top:5px solid transparent;border-bottom:5px solid transparent;transition:transform .12s}
+#hbNews details[open]>summary::before{transform:rotate(90deg)}
+#hbNews summary:hover{color:#fff}
+#hbNews summary small{font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted)}
+#hbNews summary:focus-visible,#hbNews .hnX:focus-visible,#hbNews .go:focus-visible{outline:2px solid var(--you);outline-offset:3px}
+#hbNews .hnCm{margin:6px 0 0;padding:0 0 0 18px;font-size:13px;line-height:1.45;color:var(--muted)}
+#hbNews .hnCm li{margin:3px 0;overflow-wrap:anywhere}
+#hbNews .hnOld .hnOv{margin:2px 0 0 16px}
+#hbNews .hnOld .hnOv>details{margin-top:10px;border-top:0;padding-top:0}
+#hbNews .hnOld .hnG{margin-top:8px}#hbNews .hnOld .hnG li{font-size:14px;padding:4px 0 4px 20px}#hbNews .hnOld .hnG li::before{top:10px}
+#hbNews .hnFoot{display:flex;align-items:center;justify-content:flex-end;gap:14px;padding:14px 22px calc(16px + env(safe-area-inset-bottom,0px));border-top:2px solid var(--line)}
+#hbNews .hnHint{margin:0 auto 0 0;font-size:12px;font-weight:600;color:var(--muted)}
+#hbNews .hnHint b{display:inline-block;min-width:26px;padding:3px 6px;margin:0 2px;border-radius:4px;background:var(--navy);color:var(--ink);font-size:11px;text-align:center}
+#hbNews .hnFoot .go{min-width:180px;padding:13px 26px}
+#hbNews .hnX{position:absolute;top:14px;right:14px;width:40px;height:40px;display:grid;place-items:center;border-radius:10px;border:2px solid var(--line);background:var(--navy);color:var(--ink);box-shadow:0 3px 0 #07081a;padding:0}
+#hbNews .hnX:hover{border-color:var(--lav2);color:#fff}
+.hbNewsRow{display:flex;justify-content:flex-start;margin-top:4px}
+.hbNewsBtn{position:relative;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:8px 14px;border-radius:10px;border:2px solid var(--line);background:transparent;color:var(--lav2);font:800 12px var(--display);letter-spacing:.12em;text-transform:uppercase}
+.hbNewsBtn svg{flex:none;color:var(--you)}
+html[data-plat=pc] .hbNewsBtn:hover{color:#fff;border-color:var(--lav2)}
+.hbNewsBtn.unseen::after{content:"";position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--pink);box-shadow:0 0 0 2px var(--void)}
+@keyframes hnIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes hnUp{from{opacity:.4;transform:translateY(40px)}to{opacity:1;transform:none}}
+@media (max-width:640px){
+ #hbNews{align-items:flex-end;padding:calc(10px + env(safe-area-inset-top,0px)) 0 0}
+ #hbNews .hnCard{width:100%;max-height:100%;border-radius:14px 14px 0 0;box-shadow:0 0 0 2px var(--line),0 -5px 0 2px var(--pink);animation-name:hnUp}
+ #hbNews .hnHead{padding:16px 60px 12px 16px}
+ #hbNews h2{font-size:23px}
+ #hbNews .hnBody{padding:4px 16px 12px}
+ #hbNews .hnFoot{padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+ #hbNews .hnFoot .go{flex:1;min-width:0}
+}
+@media (hover:none),(max-width:640px){#hbNews .hnHint{display:none}}
+@media (max-height:520px){#hbNews{padding-top:8px;padding-bottom:8px}#hbNews .hnHead{padding-top:12px;padding-bottom:8px}#hbNews h2{font-size:21px}#hbNews .hnFoot{padding-top:8px;padding-bottom:8px}#hbNews .hnFoot .go{padding:9px 18px}}
+html.disp-big #hbNews .hnCard{zoom:1.15}
+html.disp-hc #hbNews .hnCard{background:#000;border-color:#fff}
+@media (prefers-reduced-motion:reduce){#hbNews .hnCard,#hbNews summary::before{animation:none!important;transition:none!important}}
+</style>
 <div id="hud" hidden>
   <div class="side you">
     <div class="tag"><b>You</b><span id="pLv">Lv 1</span></div>
@@ -7396,7 +7455,7 @@ function menuA(){
   <div class="mBig"><button class="go" data-act="mv" data-v="mode">Play solo<small>Pick a mode, a hero and go</small></button>
   <button class="go ghost" data-act="online">Play online<small>Up to 16 players · lobbies &amp; passwords</small></button>
   <button class="go ghost" data-act="daily">Daily challenge<small>${esc(dailyLabel().replace(/^Daily challenge · /,''))}</small></button>
-  <button class="go ghost" data-act="mv" data-v="more">More<small>Settings, display, achievements, how to play</small></button></div>`);
+  <button class="go ghost" data-act="mv" data-v="more">More<small>Settings, display, achievements, how to play</small></button></div>${newsBtnHTML()}`);
 }
 function menu(){return menuA()}
 /* ---- online menu, staged ---- */
@@ -8403,8 +8462,66 @@ if(!window.__SIM)document.addEventListener('keydown',e=>{
 });
 if(!window.__SIM)document.addEventListener('contextmenu',e=>{if(G.sg&&G.sg.place){G.sg.place=false;e.preventDefault()}});
 
+/* ---- What's new (see #hbNewsCss): notes from the static public/changelog.json (written at push time by tools/changelog.mjs, never
+   fetched from GitHub). Shown once per new version over the home menu; the menu's "What's new" button reopens it. Last seen id in
+   localStorage 'hordenews' (falls back to sessionStorage / memory, so at most once per session when storage is blocked). Skipped for
+   room / join / ?fast links and while an online rejoin is running. Missing or invalid file: no screen. ---- */
+const NEWS={data:null,el:null,back:null,mem:null,KEY:'hordenews'};
+function newsSeen(id){let a=null,b=null;try{a=localStorage.getItem(NEWS.KEY)}catch(e){}try{b=sessionStorage.getItem(NEWS.KEY)}catch(e){}return id===a||id===b||id===NEWS.mem}
+function newsMark(id){NEWS.mem=id;try{localStorage.setItem(NEWS.KEY,id)}catch(e){}try{sessionStorage.setItem(NEWS.KEY,id)}catch(e){}}
+function newsDeep(){let s='',h='';try{s=location.search||'';h=location.hash||''}catch(e){}return /[?&#](room|code|join|lobby|fast)\b/i.test(s+h)}
+function newsClean(j){const str=(v,n)=>typeof v==='string'&&v.trim()?v.trim().slice(0,n||300):'';if(!j||!Array.isArray(j.versions))return null;const out=[];
+  for(const v of j.versions){if(!v||typeof v!=='object')continue;const id=str(v.id,64);if(!id)continue;
+    const groups=(Array.isArray(v.groups)?v.groups:[]).map(g=>g&&{name:str(g.name,40),items:(Array.isArray(g.items)?g.items:[]).map(x=>str(x)).filter(Boolean).slice(0,40)}).filter(g=>g&&g.name&&g.items.length).slice(0,12);
+    const commits=(Array.isArray(v.commits)?v.commits:[]).map(x=>str(x,400)).filter(Boolean).slice(0,200);
+    if(!groups.length&&!commits.length)continue;
+    out.push({id,date:/^\d{4}-\d{2}-\d{2}$/.test(v.date)?v.date:'',title:str(v.title,120),groups,commits});if(out.length>=10)break}
+  return out.length?out:null}
+function newsDate(d){if(!d)return'';const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],[y,m,dd]=d.split('-').map(Number);return M[m-1]?M[m-1]+' '+dd+', '+y:d}
+const NEWS_IC='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18.5 15.5l.6 1.7 1.7.6-1.7.6-.6 1.7-.6-1.7-1.7-.6 1.7-.6z"/></svg>';
+function newsBtnHTML(){const v=NEWS.data&&NEWS.data[0];return `<div class="hbNewsRow"><button type="button" class="hbNewsBtn${v&&!newsSeen(v.id)?' unseen':''}" data-act="news" aria-haspopup="dialog">${NEWS_IC}What's new</button></div>`}
+function newsSyncBtn(){const v=NEWS.data&&NEWS.data[0];document.querySelectorAll('.hbNewsBtn').forEach(b=>b.classList.toggle('unseen',!!v&&!newsSeen(v.id)))}
+function newsBuild(){
+  const mk=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e};
+  const gcls=n=>'g-'+n.toLowerCase().replace(/[^a-z]+/g,'');
+  const groups=(v,host)=>v.groups.forEach(g=>{const s=mk('section','hnG '+gcls(g.name));s.append(mk('h3','',g.name));const ul=mk('ul');g.items.forEach(i=>ul.append(mk('li','',i)));s.append(ul);host.append(s)});
+  const full=v=>{const d=mk('details');d.append(mk('summary','','Full details ('+v.commits.length+')'));const ul=mk('ul','hnCm');v.commits.forEach(c=>ul.append(mk('li','',c)));d.append(ul);return d};
+  const v=NEWS.data&&NEWS.data[0],el=NEWS.el;el.textContent='';
+  const card=mk('div','hnCard'),head=mk('header','hnHead');head.append(mk('p','hnK',"What's new"));
+  const h=mk('h2','',v?(v.title||'New update'):'No update notes yet');h.id='hnTitle';head.append(h);
+  if(v){const m=mk('p','hnMeta',(v.date?newsDate(v.date)+' · ':'')+'version ');m.append(mk('code','',v.id.slice(0,7)));head.append(m)}
+  const x=mk('button','hnX');x.type='button';x.setAttribute('aria-label','Close');x.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';x.onclick=newsClose;
+  const body=mk('div','hnBody');body.tabIndex=-1;
+  if(!v)body.append(mk('p','lede','Update notes are not available right now.'));
+  else{groups(v,body);if(v.commits.length)body.append(full(v));const old=NEWS.data.slice(1,5);
+    if(old.length){const od=mk('details','hnOld');od.append(mk('summary','','Earlier updates'));const ov=mk('div','hnOv');
+      old.forEach(o=>{const d=mk('details'),s=mk('summary','',o.title||'Update');if(o.date){s.append(' ');s.append(mk('small','','· '+newsDate(o.date)))}d.append(s);groups(o,d);if(o.commits.length)d.append(full(o));ov.append(d)});od.append(ov);body.append(od)}}
+  const foot=mk('footer','hnFoot'),hint=mk('p','hnHint');hint.innerHTML='<b>Esc</b> or <b>Enter</b> to close';
+  const ok=mk('button','go','Continue');ok.type='button';ok.onclick=newsClose;foot.append(hint,ok);
+  card.append(head,x,body,foot);el.append(card)}
+function newsOpen(){
+  if(!NEWS.el){const el=document.createElement('div');el.id='hbNews';el.hidden=true;el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-labelledby','hnTitle');
+    el.addEventListener('pointerdown',e=>{if(e.target===el)newsClose()});document.body.appendChild(el);NEWS.el=el}
+  if(!NEWS.el.hidden)return;newsBuild();NEWS.back=document.activeElement;NEWS.el.hidden=false;sticks.move=sticks.aim=null;mouse.down=false;
+  const ok=NEWS.el.querySelector('.hnFoot .go');try{ok.focus({preventScroll:true})}catch(e){ok.focus()}
+  const v=NEWS.data&&NEWS.data[0];if(v)newsMark(v.id);newsSyncBtn()}
+function newsClose(){const el=NEWS.el;if(!el||el.hidden)return;el.hidden=true;const b=NEWS.back;NEWS.back=null;
+  const t=b&&b.isConnected&&b.offsetParent?b:document.querySelector('#panel .hbNewsBtn');if(t&&!ov.hidden)try{t.focus({preventScroll:true})}catch(e){}}
+function newsInit(){
+  addEventListener('keydown',e=>{const el=NEWS.el;if(!el||el.hidden)return;const k=e.key,t=e.target;
+    if(k==='Escape'){e.preventDefault();e.stopImmediatePropagation();newsClose();return}
+    if(k==='Enter'&&!(t&&el.contains(t)&&(t.tagName==='SUMMARY'||t.tagName==='BUTTON'))){e.preventDefault();e.stopImmediatePropagation();newsClose();return}
+    if(k==='Tab'){const f=[...el.querySelectorAll('button,summary')].filter(x=>x.offsetParent);if(f.length){const a=f[0],z=f[f.length-1];if(!el.contains(t)){e.preventDefault();a.focus()}else if(e.shiftKey&&t===a){e.preventDefault();z.focus()}else if(!e.shiftKey&&t===z){e.preventDefault();a.focus()}}}
+    e.stopImmediatePropagation()},true);
+  panel.addEventListener('click',e=>{const b=e.target.closest('[data-act="news"]');if(b){e.preventDefault();newsOpen()}});
+  const calm=()=>!ov.hidden&&G.mode==='menu'&&MENU.st==='home'&&!NET.m&&!NET.ws&&!NET.reco&&!NET.code&&!tutEl&&!PF.open&&!document.getElementById('tutWin');
+  try{fetch('changelog.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{NEWS.data=newsClean(j);newsSyncBtn();const v=NEWS.data&&NEWS.data[0];
+    let sess=null;try{sess=netSess()}catch(e){}
+    if(v&&!newsSeen(v.id)&&!newsDeep()&&!sess&&calm())newsOpen()}).catch(()=>{})}catch(e){}
+}
+
 function update(dt){update0(dt);if(NET.m==='host')netHostTick(dt)}
 
-if(window.__SIM){window.__SIM.api={start:netSrvStart,tick:update,recv:netRecv,botify:netBotify,rejoin:netRejoin,resync:netResync,humans:netHumans,NET,G};}else{try{pfInit();resize();menu();requestAnimationFrame(frame);netResume();}catch(err){fatal(err)}}
+if(window.__SIM){window.__SIM.api={start:netSrvStart,tick:update,recv:netRecv,botify:netBotify,rejoin:netRejoin,resync:netResync,humans:netHumans,NET,G};}else{try{pfInit();resize();menu();requestAnimationFrame(frame);netResume();}catch(err){fatal(err)}try{newsInit()}catch(e){}}
 })();
 </script>
