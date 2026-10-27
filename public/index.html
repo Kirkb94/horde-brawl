@@ -750,7 +750,7 @@ const KIT={
   necro:{sk:'Grave Hover',skB:'HOVER',skCd:12,skD:'Rise above the battlefield for up to 3s: you are rooted and untouchable and see much farther. Press E again, or wait, to swoop down where you aim (up to 600 away) and raise a pack of 4 crawlers',ult:'Raise Dead',ultD:'Raise a Matriarch at your aim point. She fights for you for 30s, and spiders crawl out of her, up to 40 at once'}
 };
 /* ABAL: hero ability balance (16-bot battle royale sims). q = signature cooldown (s), e = skill cooldown (s), x = ultimate charge speed (1 = normal). */
-const ABAL={"hammer":{"q":11,"x":0.75},"scorch":{"q":16,"e":7,"x":1.4},"pistol":{"q":10,"e":7,"x":1.35},"carbine":{"q":12,"e":6,"x":1.2},"rifle":{"q":12,"e":7,"x":1.15},"sword":{"q":6,"e":6,"x":1.1},"necro":{"q":7.7,"e":13.2,"x":0.65},"revolver":{"q":18,"x":0.9},"crossbow":{"q":17},"shotgun":{"q":23,"e":13,"x":0.9}};
+const ABAL={"hammer":{"q":11,"x":0.9},"scorch":{"q":16,"e":7,"x":1.4},"pistol":{"q":10,"e":7,"x":1.35},"carbine":{"q":12,"e":6,"x":1.2},"rifle":{"q":12,"e":7,"x":1.15},"sword":{"q":6,"e":6,"x":1.1},"necro":{"q":7.7,"e":13.2,"x":1},"revolver":{"q":18,"x":0.9},"crossbow":{"q":17},"shotgun":{"q":23,"e":13,"x":0.9}};
 for(const k in ABAL){const a=ABAL[k];if(a.q)CHARS[k].cd=a.q;if(a.e)KIT[k].skCd=a.e;if(a.x)KIT[k].ultK=a.x}
 const UNB={"t":6,"hp":550};
 KIT.hammer.ultD='For '+UNB.t+'s you glow with power and your max health becomes '+UNB.hp+', filled to the top. When it ends you drop back to your normal max';
@@ -2657,6 +2657,7 @@ function damage(t,amt,src,b,dot){
   if(hit0){if(amt>0)t.hp-=amt;t.hitT=G.time;if(!dot){t.hitFlash=0.1;if(t.healT>0){t.healT=0;t.healKind=null}}}
   if(src){
     if(src!==t&&!src.zomb&&src.st){if(src.st.fx.vamp&&src.alive)src.hp=Math.min(mhp(src),src.hp+full*.075*src.st.fx.vamp*(dot?.5:1));ultGain(src,full*(t.zomb?ULT_ZOMB:ULT_HERO),1)}
+    else if(src!==t&&src.zomb&&src.master&&src.master.st&&src.master!==t&&!isAlly(src.master,t))ultGain(src.master,full*(t.zomb?ULT_ZOMB:ULT_HERO),1);   // Mortis: his raised dead charge his ult (same rates and per-second cap)
     if(!t.zomb)gainXP(src,full);
     if(NET.m==='host'&&!dot&&(t.remote||src.remote))netNumEv(t,full,src);
     if(!dot&&(G.debug||src===G.P||t===G.P))addNum(t,full,G.debug?COL.ink:(t===G.P?COL.foe:COL.you));
