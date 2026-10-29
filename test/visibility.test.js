@@ -15,3 +15,13 @@ test('all ability previews omit target markers and the full game script parses',
  assert.equal(page.includes('aimMark('),false);
  for(const match of page.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(match[1]);
 });
+
+test('cast scan draws hidden fighters through walls until their tag expires',()=>{
+ const c=fixture(),drawn=[],p={id:1,x:0,y:0,facing:0},e={alive:true,x:-100,y:0,tagT:4,tagBy:1};
+ c.tagVis=(v,e)=>e.tagT>0&&e.tagBy===v.id;c.drawFighter=(e,color)=>drawn.push({e,color});
+ c.drawScannedFighter(p,e,'orange');assert.equal(drawn.length,1);
+ e.x=100;c.rayCast=()=>10;c.drawScannedFighter(p,e,'orange');assert.equal(drawn.length,2);
+ e.tagT=0;c.drawScannedFighter(p,e,'orange');assert.equal(drawn.length,2);
+ e.tagT=4;e.tagBy=2;c.drawScannedFighter(p,e,'orange');assert.equal(drawn.length,2);
+ e.tagBy=1;c.rayCast=(x,y,a,d)=>d;c.drawScannedFighter(p,e,'orange');assert.equal(drawn.length,2);
+});

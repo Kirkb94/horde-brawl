@@ -1587,6 +1587,11 @@ function visualCanSee(viewer,target){
   if(d>NEAR&&Math.abs(angDiff(viewer.facing,Math.atan2(dy,dx)))>fv(viewer)/2)return false;
   return rayCast(viewer.x,viewer.y,Math.atan2(dy,dx),d)>=d;
 }
+// Scans reveal the fighter itself after casting, independently of normal sight.
+function drawScannedFighter(viewer,enemy,color){
+  if(enemy===viewer||!enemy.alive||enemy.zomb||!tagVis(viewer,enemy)||visualCanSee(viewer,enemy))return;
+  drawFighter(enemy,color);
+}
 function clipPlayerSight(viewer){
   // Union the wall-clipped cone with close-range awareness; clip whole effects, not just their centers.
   const spread=fv(viewer),range=vr(viewer);
@@ -6601,6 +6606,10 @@ function render0(){
       if(P.alive&&!G.debug){const [rx,ry]=S(P.x,P.y),rr=(P.r+8)*zz,pu=.5+.5*Math.sin(G.time*3);ctx.save();const rg=ctx.createRadialGradient(rx,ry,rr*.5,rx,ry,rr*2.2);rg.addColorStop(0,'rgba(255,255,255,0)');rg.addColorStop(.45,'rgba(180,230,230,.22)');rg.addColorStop(1,'rgba(180,230,230,0)');ctx.fillStyle=rg;ctx.fillRect(rx-rr*2.2,ry-rr*2.2,rr*4.4,rr*4.4);ctx.globalAlpha=.35+.2*pu;ctx.strokeStyle=COL.you;ctx.lineWidth=2;ctx.beginPath();ctx.arc(rx,ry,rr,0,TAU);ctx.stroke();ctx.restore()}
     }
     for(let _i37=0,_a37=G.fighters;_i37<_a37.length;_i37++){const e=_a37[_i37];if(e===P||!e.alive||e.zomb||!tagVis(P,e))continue;const [sx,sy]=S(e.x,e.y),h=clamp(e.hp/mhp(e),0,1),c=`hsl(${Math.round(h*120)},95%,58%)`;
+      ctx.save();
+      ctx.setTransform(DPR*zz,0,0,DPR*zz,DPR*(VW/2-G.cam.x*zz),DPR*(VH/2-G.cam.y*zz));
+      drawScannedFighter(P,e,c);
+      ctx.restore();
       if(!PERF.lite){ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(sx,sy,2,sx,sy,34*zz);g.addColorStop(0,c);g.addColorStop(1,'rgba(0,0,0,0)');ctx.globalAlpha=.55;ctx.fillStyle=g;ctx.fillRect(sx-34*zz,sy-34*zz,68*zz,68*zz);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}
       ctx.strokeStyle=c;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(sx,sy,(e.r+9)*zz,0,TAU);ctx.stroke()}
     if(P.alive&&P.fenceT>0&&!G.debug){const L=fenceLink(P),c0=L.last||P,[sx,sy]=S(c0.x,c0.y);ctx.strokeStyle=rgba(L.ok?'#7fe0ff':'#ff4d5e',.6);ctx.setLineDash([10,8]);ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx,sy,fenceRange(P)*zz,0,TAU);ctx.stroke();ctx.setLineDash([]);
