@@ -67,7 +67,7 @@ test('cannot join a match that already started', async t => {
   const { host, joined } = await makeRoom(srv);
   host.send({ t: 'upd', ready: true });
   host.send({ t: 'start' });
-  await host.waitFor('players', 3000, m => m.started === true);
+  await host.waitFor('players', 8000, m => m.started === true);
   const g = await connect(srv);
   g.send({ t: 'join', code: joined.code });
   assert.match((await g.waitFor('err')).msg, /already started/);
@@ -78,7 +78,7 @@ test('quick skips started and full rooms and makes a new lobby', async t => {
   const a = await makeRoom(srv, 'A');
   a.host.send({ t: 'upd', ready: true });
   a.host.send({ t: 'start' });
-  await a.host.waitFor('players', 3000, m => m.started === true);
+  await a.host.waitFor('players', 8000, m => m.started === true);
   const b = await makeRoom(srv, 'B');
   b.host.send({ t: 'cfg', mode: 'duel', size: 2 });
   await b.host.waitFor('players', 3000, m => m.cfg.mode === 'duel');
@@ -166,7 +166,7 @@ test('sweeper keeps started matches regardless of age', async t => {
   const { host } = await makeRoom(srv);
   host.send({ t: 'upd', ready: true });
   host.send({ t: 'start' });
-  await host.waitFor('players', 3000, m => m.started === true);
+  await host.waitFor('players', 8000, m => m.started === true);
   await sleep(1500);
   assert.equal((await srv.stats()).rooms, 1);
 });

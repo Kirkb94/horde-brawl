@@ -181,9 +181,9 @@ function netLeaderChanged(prev,m){
 }
 function netMsgInner(m){
   switch(m.t){
-    case'joined':NET.auth=!!m.auth;netSessSave(m);if(m.cfg)NET.cfg=m.cfg;NET.pid=m.pid;NET.code=m.code;NET.hostPid=m.host;NET.players=m.players;NET.role=m.pid===m.host?'host':'client';NET.notice='';if(m.rejoined){netRecoStop();NET.lastSnap=performance.now();NET.modeSince=0}if(m.started){NET.status='';break}netLobby();break;
+    case'joined':NET.auth=!!m.auth;netSessSave(m);if(m.cfg)NET.cfg=m.cfg;NET.countdown=m.countdown||0;NET.pid=m.pid;NET.code=m.code;NET.hostPid=m.host;NET.players=m.players;NET.role=m.pid===m.host?'host':'client';NET.notice='';if(m.rejoined){netRecoStop();NET.lastSnap=performance.now();NET.modeSince=0}if(m.started){NET.status='';break}netLobby();break;
     case'players':
-      const pvHost=NET.hostPid;NET.players=m.players;NET.hostPid=m.host;if(m.cfg)NET.cfg=m.cfg;NET.role=NET.pid===m.host?'host':'client';netLeaderChanged(pvHost,m);
+      const pvHost=NET.hostPid;NET.countdown=m.countdown||0;NET.players=m.players;NET.hostPid=m.host;if(m.cfg)NET.cfg=m.cfg;NET.role=NET.pid===m.host?'host':'client';netLeaderChanged(pvHost,m);
       if(m.started&&!NET.live&&!NET.auth&&NET.role==='host')netHostStart();else if(!m.started&&NET.live){netCleanup();netLobby()}else if(!NET.live&&!m.started)netLobby();break;
     case'left':if(NET.m==='host')netBotify(m.pid);break;
     case'hostlost':if(NET.m==='client')feedAdd('Host connection lost - waiting up to '+Math.round((m.ms||30000)/1000)+'s for them to return',false);break;
@@ -276,7 +276,8 @@ function netLobby(){
   ${modGroup()}
   <div class="group"><span class="glabel">Bot skill</span><div class="seg">${Object.keys(DIFF).map(k=>`<button data-act="diff" data-v="${k}" aria-pressed="${G.diff===k}">${cap(k)}</button>`).join('')}</div></div>`:''}
   <details class="how" id="netCharacterPicker"><summary>Change character</summary>${wepGrid()}</details>
-  <div class="pfoot"><button class="go" data-act="n_ready" aria-pressed="${!!(me&&me.ready)}">${me&&me.ready?'Unready':'Ready up'}</button>${host?`<button class="go" data-act="n_start" ${NET.players.every(p=>p.ready)?'':'disabled'}>Start match</button>`:''}</div>
+  ${NET.countdown?`<p class="lede" role="status" aria-live="polite" style="font-size:32px;font-weight:800">Match starts in ${NET.countdown}...</p>`:''}
+  <div class="pfoot"><button class="go" data-act="n_ready" aria-pressed="${!!(me&&me.ready)}">${me&&me.ready?'Unready':'Ready up'}</button>${host?`<button class="go" data-act="n_start" ${!NET.countdown&&NET.players.every(p=>p.ready)?'':'disabled'}>${NET.countdown?'Starting...':'Start match'}</button>`:''}</div>
   <p class="lede">${NET.players.filter(p=>p.ready).length}/${NET.players.length} ready · Changing your hero or team clears your ready status.</p>
   <button class="go ghost" data-act="n_leave">Leave room</button>`);
   if(picker){panel.querySelector('#netCharacterPicker').replaceWith(picker);panel.scrollTop=scroll;}
@@ -287,7 +288,7 @@ function netAct2(act,v){
     case'n_create':netReadForm();NET.notice='';netConnect(()=>netSend({t:'create',name:NET.name,weapon:G.pick}));break;
     case'n_join':{netReadForm();const c=($('#nCode').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==4){NET.notice='Enter the 4 letter room code.';netMenu();break}NET.notice='';netConnect(()=>netSend({t:'join',code:c,name:NET.name,weapon:G.pick}));break}
     case'n_ready':{const me=NET.players.find(p=>p.pid===NET.pid);if(me)netSend({t:'upd',ready:!me.ready});break;}
-    case'n_start':if(NET.role==='host'&&NET.players.length&&NET.players.every(p=>p.ready))netSend({t:'start',diff:G.diff});break;
+    case'n_start':if(!NET.countdown&&NET.role==='host'&&NET.players.length&&NET.players.every(p=>p.ready))netSend({t:'start',diff:G.diff});break;
     case'n_leave':netLeave();break;
     case'n_lobby':netSend({t:'lobby'});break;
     case'n_rematch':if(NET.role==='host'){netSend({t:'rematch',diff:G.diff});if(!NET.auth)netHostStart()}break;

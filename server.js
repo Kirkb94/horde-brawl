@@ -479,8 +479,17 @@ function balanceTeams(room) {
   while (b.length > half && a.length < half) { const q = b.pop(); q.team = 0; a.push(q); }
 }
 const list = room => [...room.players.values()].map(p => ({ pid: p.pid, name: p.name, weapon: p.weapon, team: p.team, ready: !!p.ready }));
+function cancelCountdown(room) {
+  clearInterval(room.countdownTimer); room.countdownTimer = null; room.countdown = 0;
+}
+function countdownValid(room) {
+  return rooms.get(room.code) === room && room.players.size > 0 &&
+    room.host === room.countdownHost && [...room.players.keys()].join(',') === room.countdownRoster &&
+    [...room.players.values()].every(p => p.ready && p.ws && p.ws.readyState === 1);
+}
 function bcastPlayers(room) {
-  const msg = { t: 'players', host: room.host, players: list(room), started: room.started, cfg: room.cfg, room: { name: room.name || '', locked: !!room.pass } };
+  if (room.countdown && !countdownValid(room)) cancelCountdown(room);
+  const msg = { t: 'players', host: room.host, players: list(room), started: room.started, countdown: room.countdown || 0, cfg: room.cfg, room: { name: room.name || '', locked: !!room.pass } };
   for (const p of room.players.values()) send(p.ws, msg);
 }
 // Returns an error message if the room can't accept a new player right now, else null.
@@ -679,7 +688,7 @@ wss.on('connection', (ws, req) => {
         return bcastPlayers(room);
       }
       case 'start':
-        if (room && p && p.pid === room.host && !room.started) {
+        if (room && p && p.pid === room.host && !room.started && !room.countdown) {
           if ([...room.players.values()].some(q => !q.ready)) return send(ws, { t: 'err', msg: 'Everyone must ready up before starting.' });
           if (!room.auth) {
             let bad = null;
@@ -689,11 +698,24 @@ wss.on('connection', (ws, req) => {
               return send(ws, { t: 'players', host: room.host, players: list(room), started: room.started });
             }
           }
-          if (room.auth) {
-            if ([...rooms.values()].filter(r => r.sim).length >= MAX_MATCHES) return send(ws, { t: 'err', msg: 'The server is running as many matches as it can. Try again shortly.' });
-            try { room.started = true; startSim(room, m.diff); } catch (e) { console.error('start failed', e); room.started = false; stopSim(room); return send(ws, { t: 'err', msg: 'Could not start the match on the server.' }); }
-          } else room.started = true;
+          room.countdown = 3;
+          room.countdownHost = room.host;
+          room.countdownRoster = [...room.players.keys()].join(',');
           bcastPlayers(room);
+          room.countdownTimer = setInterval(() => {
+            if (!countdownValid(room) || room.started) { cancelCountdown(room); bcastPlayers(room); return; }
+            if (--room.countdown > 0) { bcastPlayers(room); return; }
+            cancelCountdown(room);
+            if (room.auth) {
+              if ([...rooms.values()].filter(r => r.sim).length >= MAX_MATCHES) {
+                send(ws, { t: 'err', msg: 'The server is running as many matches as it can. Try again shortly.' });
+                bcastPlayers(room); return;
+              }
+              try { room.started = true; startSim(room, m.diff); }
+              catch (e) { console.error('start failed', e); room.started = false; stopSim(room); send(ws, { t: 'err', msg: 'Could not start the match on the server.' }); }
+            } else room.started = true;
+            bcastPlayers(room);
+          }, 1000);
         } return;
       case 'rematch':
         if (room && p && p.pid === room.host && room.started) {
@@ -703,7 +725,7 @@ wss.on('connection', (ws, req) => {
           }
           bcastPlayers(room);
         } return;
-      case 'lobby': if (room && p && p.pid === room.host) { clearHolds(room); stopSim(room); room.started = false; for (const q of room.players.values()) q.ready = false; bcastPlayers(room); } return;
+      case 'lobby': if (room && p && p.pid === room.host) { cancelCountdown(room); clearHolds(room); stopSim(room); room.started = false; for (const q of room.players.values()) q.ready = false; bcastPlayers(room); } return;
       case 'rejoin': {
         if (ws.rjFails >= MAX_REJOIN_FAILS) return;
         if (joinLimited(ws)) return;
@@ -782,13 +804,13 @@ function sweepOnce() {
       }
       if (!rooms.has(r.code)) continue;   // expireHold may have removed the room
     }
-    if (!r.started && r.players.size && now - (r.active || r.created) > LOBBY_IDLE_MS) {   // idle lobby: tell players and close
+    if (!r.started && !r.countdown && r.players.size && now - (r.active || r.created) > LOBBY_IDLE_MS) {   // idle lobby: tell players and close
       const socks = [...r.players.values()].map(q => q.ws);
       closeRelayRoom(r, 'This lobby was closed after being idle for a while. Please create a new room.');
       for (const s of socks) { try { s.close(1000, 'idle lobby'); } catch (e) {} }
     }
   }
-  for (const [c, r] of rooms) if ((!r.players.size && !(r.held && r.held.size)) || (!r.started && now - r.created > ROOM_MAX_AGE_MS)) { clearHolds(r); stopSim(r); rooms.delete(c); }
+  for (const [c, r] of rooms) if ((!r.players.size && !(r.held && r.held.size)) || (!r.started && !r.countdown && now - r.created > ROOM_MAX_AGE_MS)) { clearHolds(r); stopSim(r); rooms.delete(c); }
 }
 const sweeper = setInterval(sweep, SWEEP_MS);
 

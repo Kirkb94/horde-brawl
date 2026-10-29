@@ -781,7 +781,7 @@ const CHARS={
   sniper:{spd:1.1,hpMax:195,name:'Veil',role:'Ghost',ab:'Cloak',btn:'CLOAK',cd:20,desc:'Vanish for 5s. Foes only spot you up close. Firing breaks it. Z zooms: a much tighter cone that sees much farther'},
   rocket:{spd:.96,hpMax:160,name:'Torque',role:'Demolisher',ab:'Rocket Jump',btn:'JUMP',cd:14,desc:'Fires a rocket at your feet and launches you about 320 units the way you are moving (the way you aim if standing still). You fly over walls. The blast hurts nearby foes, never you'},
   crossbow:{spd:1.04,hpMax:150,name:'Lattice',role:'Warden',ab:'Tesla Fence',btn:'FENCE',cd:15,desc:'Throw up to four linked posts. A ring shows how far the next one can go. Foes crossing a beam take 20 damage and are slowed. Close the loop to electrify the inside. You and your ally take 30% less damage standing inside it (Static Cloak)'},
-  carbine:{spd:1.0,hpMax:160,name:'Argus',role:'Spotter',ab:'Thermal Scan',btn:'SCAN',cd:17,desc:'A pulse tags every foe within 650 units for 4.5s. You and your ally see them through walls, colored by health. Tagged foes take 25% more from your carbine'},
+  carbine:{spd:1.0,hpMax:160,name:'Argus',role:'Spotter',ab:'Thermal Scan',btn:'SCAN',cd:17,desc:'A pulse tags every foe within 650 units for 4.5s. Tagged foes are colored by health while in sight. Tagged foes take 25% more from your carbine'},
   scorch:{spd:.94,hpMax:240,name:'Halcyon',role:'Protector',ab:'Bubble Bay',btn:'DOME',cd:22,desc:'Drop a dome that fits about five fighters. It blocks every shot in both directions for 8s or 500 damage, but never blocks movement'},
   sword:{spd:1.35,hpMax:160,name:'Sabre',role:'Duelist',ab:'Lunge',btn:'LUNGE',cd:7,desc:'Dashes through the nearest foe within 380 units and lands on the far side, dealing three slashes of damage in one pass and leaving a swipe. Nothing can hit you mid-lunge'},
   hammer:{spd:1.0,hpMax:250,name:'Anvil',role:'Juggernaut',ab:'Leap Slam',btn:'LEAP',cd:9,desc:'Hurl yourself into the air toward your aim and crash down: 40 damage and a heavy slow where you land, and zombies there are stunned for 1.2s. You fly over walls and nothing can hit you in the air'},
@@ -6986,8 +6986,6 @@ function aimHeldKey(c){const has=a=>(BIND[a]||[]).includes(c)||(ALT[a]||[]).incl
 
 // ---- the ghost / area indicator ----
 function aimFoesIn(p,test){const out=[];for(const e of G.fighters){if(!foeOf(p,e)||!e.alive||!visualCanSee(p,e))continue;if(e.cloakT>0&&Math.hypot(e.x-p.x,e.y-p.y)>130)continue;if(test(e))out.push(e)}return out}
-function aimMark(list,col){const pu=.65+.35*Math.sin(G.time*12);for(const e of list){ctx.save();ctx.strokeStyle=rgba(col||'#ff4d6d',pu);ctx.lineWidth=3;ctx.beginPath();ctx.arc(e.x,e.y,e.r+9,0,TAU);ctx.stroke();
-  ctx.fillStyle=rgba(col||'#ff4d6d',pu);ctx.beginPath();ctx.moveTo(e.x,e.y-e.r-22);ctx.lineTo(e.x-6,e.y-e.r-31);ctx.lineTo(e.x+6,e.y-e.r-31);ctx.closePath();ctx.fill();ctx.restore()}}
 function aimZone(x,y,R,col,o={}){ctx.save();const T=G.time;
   ctx.fillStyle=rgba(col,o.fill||.13);ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.fill();
   ctx.strokeStyle=rgba(col,.95);ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,R,0,TAU);ctx.stroke();
@@ -7010,38 +7008,38 @@ function drawAimInd(P){
   const sp=(fn)=>{const sv={f:P.facing,t:P.tgtPt};P.facing=a;P.tgtPt=pt;try{return fn()}finally{P.facing=sv.f;P.tgtPt=sv.t}};
   const KEY={q:'Q',e:'E',x:'X'}[s],name=s==='q'?CHARS[k].ab:s==='e'?KIT[k].sk:KIT[k].ult;
   if(s==='q'){
-    if(k==='pistol'){const q=sp(()=>aheadPt(P,36));aimRange(q,380,col);aimGhost(q.x,q.y,14,col);aimMark(aimFoesIn(P,e=>Math.hypot(e.x-q.x,e.y-q.y)<380&&losClear(q.x,q.y,e.x,e.y)),col)}
+    if(k==='pistol'){const q=sp(()=>aheadPt(P,36));aimRange(q,380,col);aimGhost(q.x,q.y,14,col)}
     else if(k==='shotgun'){const q=sp(()=>aheadPt(P,64)),len=120*(1+.4*(fx.plate||0));aimWall(q.x,q.y,ca,sa,len,col)}
-    else if(k==='rocket'){const L=jumpLand(P,a,JUMP_D*(1+.3*(fx.boost||0)));ctx.save();ctx.setLineDash([8,8]);ctx.lineDashOffset=-G.time*30;ctx.strokeStyle=rgba(col,.9);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.quadraticCurveTo((P.x+L.x)/2,(P.y+L.y)/2-90,L.x,L.y);ctx.stroke();ctx.restore();aimZone(P.x,P.y,105,'#ff9f1c',{fill:.08,cross:false});aimGhost(L.x,L.y,P.r,col);aimMark(aimFoesIn(P,e=>Math.hypot(e.x-P.x,e.y-P.y)<105),col)}
+    else if(k==='rocket'){const L=jumpLand(P,a,JUMP_D*(1+.3*(fx.boost||0)));ctx.save();ctx.setLineDash([8,8]);ctx.lineDashOffset=-G.time*30;ctx.strokeStyle=rgba(col,.9);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.quadraticCurveTo((P.x+L.x)/2,(P.y+L.y)/2-90,L.x,L.y);ctx.stroke();ctx.restore();aimZone(P.x,P.y,105,'#ff9f1c',{fill:.08,cross:false});aimGhost(L.x,L.y,P.r,col)}
     else if(k==='crossbow'){const q=sp(()=>reachPt(P));aimRange(P,fenceRange(P),col);aimGhost(q.x,q.y,12,col)}
-    else if(k==='carbine'){const R=scanR(P);aimZone(P.x,P.y,R,col,{fill:.06,cross:false});aimMark(aimFoesIn(P,e=>!e.zomb&&Math.hypot(e.x-P.x,e.y-P.y)<=R),col)}
+    else if(k==='carbine'){const R=scanR(P);aimZone(P.x,P.y,R,col,{fill:.06,cross:false})}
     else if(k==='scorch'){aimZone(P.x,P.y,DOME_R,col,{fill:.16,cross:false})}
-    else if(k==='hammer'){const D=hamLeapD(P),dd=clamp(Math.hypot(pt.x-P.x,pt.y-P.y),90,D),L=jumpLand(P,a,dd),R=hamLandR(P);aimRange(P,D,col);ctx.save();ctx.setLineDash([8,8]);ctx.lineDashOffset=-G.time*30;ctx.strokeStyle=rgba(col,.9);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.quadraticCurveTo((P.x+L.x)/2,(P.y+L.y)/2-110,L.x,L.y);ctx.stroke();ctx.restore();aimZone(L.x,L.y,R,col,{fill:.14});aimMark(aimFoesIn(P,e=>Math.hypot(e.x-L.x,e.y-L.y)<R+e.r),col)}
-    else if(k==='sword'){aimRange(P,lungeRange(P),col);const T=sp(()=>lungeTarget(P));if(T){const pl=lungePlan(P,T);if(pl)aimLine(P.x,P.y,P.x+Math.cos(pl.ang)*pl.dist,P.y+Math.sin(pl.ang)*pl.dist,P.r*2,col);aimMark([T],col)}}
+    else if(k==='hammer'){const D=hamLeapD(P),dd=clamp(Math.hypot(pt.x-P.x,pt.y-P.y),90,D),L=jumpLand(P,a,dd),R=hamLandR(P);aimRange(P,D,col);ctx.save();ctx.setLineDash([8,8]);ctx.lineDashOffset=-G.time*30;ctx.strokeStyle=rgba(col,.9);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.quadraticCurveTo((P.x+L.x)/2,(P.y+L.y)/2-110,L.x,L.y);ctx.stroke();ctx.restore();aimZone(L.x,L.y,R,col,{fill:.14})}
+    else if(k==='sword'){aimRange(P,lungeRange(P),col);const candidate=sp(()=>lungeTarget(P)),T=candidate&&visualCanSee(P,candidate)?candidate:null;if(T){const pl=lungePlan(P,T);if(pl)aimLine(P.x,P.y,P.x+Math.cos(pl.ang)*pl.dist,P.y+Math.sin(pl.ang)*pl.dist,P.r*2,col)}}
   }else if(s==='e'){
-    if(k==='revolver'){aimZone(P.x,P.y,520,col,{fill:.05,cross:false});const L=aimFoesIn(P,e=>e.burnT>0&&Math.hypot(e.x-P.x,e.y-P.y)<=520);aimMark(L,col);for(const e of L)aimZone(e.x,e.y,95,'#ffb347',{fill:.12,cross:false})}
+    if(k==='revolver'){aimZone(P.x,P.y,520,col,{fill:.05,cross:false});const L=aimFoesIn(P,e=>e.burnT>0&&Math.hypot(e.x-P.x,e.y-P.y)<=520);for(const e of L)aimZone(e.x,e.y,95,'#ffb347',{fill:.12,cross:false})}
     else if(k==='smg'||k==='rifle'){const d=k==='smg'?330:240,w=k==='smg'?60:52,L=Math.max(30,Math.min(d,rayCast(P.x,P.y,a,d+30)-P.r-4));aimLine(P.x,P.y,P.x+ca*L,P.y+sa*L,w,col);
-      aimMark(aimFoesIn(P,e=>segDist(e.x,e.y,P.x,P.y,P.x+ca*L,P.y+sa*L)<w/2+e.r),col)}
+      }
     else if(k==='shotgun'){const H=rad(P.st.spread||22)/2*.9,R=HOOK.max;ctx.save();ctx.fillStyle=rgba(col,.12);ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.arc(P.x,P.y,R,a-H,a+H);ctx.closePath();ctx.fill();ctx.strokeStyle=rgba(col,.95);ctx.lineWidth=2.5;ctx.stroke();
       ctx.setLineDash([6,6]);ctx.lineDashOffset=-G.time*30;ctx.strokeStyle=rgba('#ffffff',.7);ctx.beginPath();ctx.arc(P.x,P.y,R-6,a-H,a+H);ctx.stroke();ctx.restore();
-      aimMark(aimFoesIn(P,e=>!e.zomb&&Math.hypot(e.x-P.x,e.y-P.y)<R+e.r&&Math.abs(angDiff(a,Math.atan2(e.y-P.y,e.x-P.x)))<H+.12),col)}
+      }
     else if(k==='sniper'){let d=Math.max(0,Math.min(230,rayCast(P.x,P.y,a,260)-P.r-6));aimLine(P.x,P.y,P.x+ca*d,P.y+sa*d,10,col);aimGhost(P.x+ca*d,P.y+sa*d,P.r,col)}
-    else if(k==='rocket'){const q=clampPt(380);aimRange(P,380,col);aimZone(q.x,q.y,130,'#ff9f1c');aimMark(aimFoesIn(P,e=>Math.hypot(e.x-q.x,e.y-q.y)<130+e.r),col)}
-    else if(k==='crossbow'){const ps=G.deploys.filter(d=>d.kind==='post'&&d.owner===P);for(const q of ps)aimZone(q.x,q.y,140,col,{cross:false});aimMark(aimFoesIn(P,e=>ps.some(q=>Math.hypot(e.x-q.x,e.y-q.y)<=140)),col);if(!ps.length)aimLabel(P,'NO FENCE POSTS','#ff8a8a')}
-    else if(k==='carbine'){const T=sp(()=>paintTarget(P,900)),L=T?Math.hypot(T.x-P.x,T.y-P.y):Math.min(900,rayCast(P.x,P.y,a,900)),pa=T?Math.atan2(T.y-P.y,T.x-P.x):a;aimLine(P.x,P.y,P.x+Math.cos(pa)*L,P.y+Math.sin(pa)*L,8,'#ff5fd2');if(T)aimMark([T],'#ff5fd2')}
-    else if(k==='hammer'){const H=rad(HWAVE.arc)/2,R=HWAVE.R;ctx.save();ctx.fillStyle=rgba(col,.12);ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.arc(P.x,P.y,R,a-H,a+H);ctx.closePath();ctx.fill();ctx.strokeStyle=rgba(col,.95);ctx.lineWidth=2.5;ctx.stroke();ctx.setLineDash([6,6]);ctx.lineDashOffset=-G.time*30;ctx.strokeStyle=rgba('#ffd24a',.8);ctx.beginPath();ctx.arc(P.x,P.y,R-6,a-H,a+H);ctx.stroke();ctx.restore();aimMark(aimFoesIn(P,e=>Math.hypot(e.x-P.x,e.y-P.y)<R+e.r&&Math.abs(angDiff(a,Math.atan2(e.y-P.y,e.x-P.x)))<H+.1&&losClear(P.x,P.y,e.x,e.y)),'#ffd24a')}
-    else if(k==='scorch'){aimZone(P.x,P.y,300,col,{fill:.08,cross:false});aimMark(aimFoesIn(P,e=>Math.hypot(e.x-P.x,e.y-P.y)<=300),col)}
+    else if(k==='rocket'){const q=clampPt(380);aimRange(P,380,col);aimZone(q.x,q.y,130,'#ff9f1c')}
+    else if(k==='crossbow'){const ps=G.deploys.filter(d=>d.kind==='post'&&d.owner===P);for(const q of ps)aimZone(q.x,q.y,140,col,{cross:false});if(!ps.length)aimLabel(P,'NO FENCE POSTS','#ff8a8a')}
+    else if(k==='carbine'){const candidate=sp(()=>paintTarget(P,900)),T=candidate&&visualCanSee(P,candidate)?candidate:null,L=T?Math.hypot(T.x-P.x,T.y-P.y):Math.min(900,rayCast(P.x,P.y,a,900)),pa=T?Math.atan2(T.y-P.y,T.x-P.x):a;aimLine(P.x,P.y,P.x+Math.cos(pa)*L,P.y+Math.sin(pa)*L,8,'#ff5fd2');}
+    else if(k==='hammer'){const H=rad(HWAVE.arc)/2,R=HWAVE.R;ctx.save();ctx.fillStyle=rgba(col,.12);ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.arc(P.x,P.y,R,a-H,a+H);ctx.closePath();ctx.fill();ctx.strokeStyle=rgba(col,.95);ctx.lineWidth=2.5;ctx.stroke();ctx.setLineDash([6,6]);ctx.lineDashOffset=-G.time*30;ctx.strokeStyle=rgba('#ffd24a',.8);ctx.beginPath();ctx.arc(P.x,P.y,R-6,a-H,a+H);ctx.stroke();ctx.restore()}
+    else if(k==='scorch'){aimZone(P.x,P.y,300,col,{fill:.08,cross:false})}
   }else{
     if(k==='revolver'){for(let i=0;i<10;i++){const d=140+i*85,x=P.x+ca*d,y=P.y+sa*d;if(!walkAt(x,y))continue;aimZone(x,y,36*(1+.25*(fx.napalm||0)),'#ff8a4d',{fill:.1,cross:false})}}
-    else if(k==='smg'){const q=clampPt(520);aimRange(P,520,col);aimZone(q.x,q.y,300,col,{fill:.1});aimMark(aimFoesIn(P,e=>Math.hypot(e.x-q.x,e.y-q.y)<300),col)}
-    else if(k==='rifle'){aimZone(P.x,P.y,450,col,{fill:.05,cross:false});for(const o of G.fighters)if(!o.zomb&&o.alive&&o!==P&&isAlly(P,o)&&Math.hypot(o.x-P.x,o.y-P.y)<=450)aimMark([o],'#3ee08f')}
+    else if(k==='smg'){const q=clampPt(520);aimRange(P,520,col);aimZone(q.x,q.y,300,col,{fill:.1})}
+    else if(k==='rifle'){aimZone(P.x,P.y,450,col,{fill:.05,cross:false});}
     else if(k==='shotgun'){for(let i=0;i<4;i++){const b=a+i*Math.PI/2;aimWall(P.x+Math.cos(b)*95,P.y+Math.sin(b)*95,Math.cos(b),Math.sin(b),150,col)}}
-    else if(k==='sniper'){const L=rayCast(P.x,P.y,a,2600);aimLine(P.x,P.y,P.x+ca*L,P.y+sa*L,22,'#ffffff');aimMark(aimFoesIn(P,e=>{const dx=e.x-P.x,dy=e.y-P.y,t=dx*ca+dy*sa;return t>0&&t<L&&Math.abs(-dx*sa+dy*ca)<e.r+8}),col)}
-    else if(k==='rocket'){const q=clampPt(560);aimRange(P,560,col);aimZone(q.x,q.y,398,'#ff9f1c',{fill:.1});aimMark(aimFoesIn(P,e=>Math.hypot(e.x-q.x,e.y-q.y)<398),col)}
-    else if(k==='crossbow'){aimRange(P,650,col);let best=null,bd=650;for(const e of G.fighters){if(!foeOf(P,e))continue;const d=Math.hypot(e.x-P.x,e.y-P.y)+(e.zomb?400:0);if(d<bd){bd=d;best=e}}if(best){aimZone(best.x,best.y,150,col,{fill:.14});aimMark([best],col)}else aimLabel(P,'NO FOE IN RANGE','#ff8a8a')}
+    else if(k==='sniper'){const L=rayCast(P.x,P.y,a,2600);aimLine(P.x,P.y,P.x+ca*L,P.y+sa*L,22,'#ffffff')}
+    else if(k==='rocket'){const q=clampPt(560);aimRange(P,560,col);aimZone(q.x,q.y,398,'#ff9f1c',{fill:.1})}
+    else if(k==='crossbow'){aimRange(P,650,col);let best=null,bd=650;for(const e of G.fighters){if(!foeOf(P,e)||!e.alive||!visualCanSee(P,e))continue;const d=Math.hypot(e.x-P.x,e.y-P.y)+(e.zomb?400:0);if(d<bd){bd=d;best=e}}if(best){aimZone(best.x,best.y,150,col,{fill:.14})}else aimLabel(P,'NO FOE IN RANGE','#ff8a8a')}
     else if(k==='scorch'){aimZone(P.x,P.y,DOME_R,'#ffd27a',{fill:.2,cross:false});ctx.save();ctx.strokeStyle='#ffffff';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(P.x,P.y-DOME_R-22);ctx.lineTo(P.x,P.y-DOME_R-8);ctx.moveTo(P.x-7,P.y-DOME_R-15);ctx.lineTo(P.x+7,P.y-DOME_R-15);ctx.stroke();ctx.restore()}
     else if(k==='necro'){const q=clampPt(450);aimRange(P,450,col);aimZone(q.x,q.y,70,col,{fill:.16})}
-    else if(k==='sword'){aimZone(P.x,P.y,480,col,{fill:.06,cross:false});aimMark(aimFoesIn(P,e=>Math.hypot(e.x-P.x,e.y-P.y)<480&&losClear(P.x,P.y,e.x,e.y)).slice(0,6),col)}
+    else if(k==='sword'){aimZone(P.x,P.y,480,col,{fill:.06,cross:false})}
   }
   aimLabel(P,`${KEY} ${name.toUpperCase()} · ${AIM.src==='touch'?(AIM.touch&&AIM.touch.cancel?'RELEASE TO CANCEL':'RELEASE TO CAST'):'CLICK TO CAST · RMB CANCEL'}`,AIM.touch&&AIM.touch.cancel?'#ff8a8a':col);
 }
@@ -7344,9 +7342,9 @@ function netLeaderChanged(prev,m){
 function netMsgInner(m){
   switch(m.t){
     case'rooms':NET.roomList=Array.isArray(m.rooms)?m.rooms:[];if(NET.view==='browse')netBrowse();break;
-    case'joined':clearInterval(NET.listIv);NET.room=m.room||null;NET.auth=!!m.auth;netSessSave(m);if(m.cfg)NET.cfg=m.cfg;NET.pid=m.pid;NET.code=m.code;NET.hostPid=m.host;NET.players=m.players;NET.role=m.pid===m.host?'host':'client';NET.notice='';if(m.rejoined){netRecoStop();NET.lastSnap=performance.now();NET.modeSince=0}if(m.started){NET.status='';break}netLobby();break;
+    case'joined':clearInterval(NET.listIv);NET.room=m.room||null;NET.auth=!!m.auth;netSessSave(m);if(m.cfg)NET.cfg=m.cfg;NET.countdown=m.countdown||0;NET.pid=m.pid;NET.code=m.code;NET.hostPid=m.host;NET.players=m.players;NET.role=m.pid===m.host?'host':'client';NET.notice='';if(m.rejoined){netRecoStop();NET.lastSnap=performance.now();NET.modeSince=0}if(m.started){NET.status='';break}netLobby();break;
     case'players':
-      const pvHost=NET.hostPid;if(m.room)NET.room=m.room;NET.players=m.players;NET.hostPid=m.host;if(m.cfg)NET.cfg=m.cfg;NET.role=NET.pid===m.host?'host':'client';netLeaderChanged(pvHost,m);
+      const pvHost=NET.hostPid;if(m.room)NET.room=m.room;NET.countdown=m.countdown||0;NET.players=m.players;NET.hostPid=m.host;if(m.cfg)NET.cfg=m.cfg;NET.role=NET.pid===m.host?'host':'client';netLeaderChanged(pvHost,m);
       if(m.started&&!NET.live&&!NET.auth&&NET.role==='host')netHostStart();else if(!m.started&&NET.live){netCleanup();netLobby()}else if(!NET.live&&!m.started)netLobby();break;
     case'left':if(NET.m==='host')netBotify(m.pid);break;
     case'hostlost':if(NET.m==='client')feedAdd('Host connection lost - waiting up to '+Math.round((m.ms||30000)/1000)+'s for them to return',false);break;
@@ -7426,7 +7424,7 @@ function howList(){const K=a=>keyName((BIND[a]||BIND_DEF[a]||[])[0]),A=a=>(ALT[a
     <li>Tap Dash to slip through bullets. You can't be hit mid-dash.</li>
     <li>Tap the purple Signature button (${K('ability')} on a keyboard) to use your hero's signature. It has a cooldown. The Skill button (${K('skill')}) and the pink ULT button (${K('ult')}) sit beside it. Cinder's Molotov works differently: tap the button, then tap anywhere inside the ring to throw it there (click on a keyboard).</li>
     <li>Torque's Rocket Jump launches him the way he moves and carries him over walls. Sabre's Lunge dashes at the nearest foe in range.</li>
-    <li>Lattice's Tesla Fence: each press throws a linked post (up to four) inside the ring that shows your reach. Foes crossing a beam take damage and slow; place a post on your first one to close the loop and electrify the inside. Argus's Thermal Scan tags every foe nearby so you and your ally see them through walls. Halcyon's Bubble Bay drops a dome that blocks every shot in both directions for a few seconds.</li>
+    <li>Lattice's Tesla Fence: each press throws a linked post (up to four) inside the ring that shows your reach. Foes crossing a beam take damage and slow; place a post on your first one to close the loop and electrify the inside. Argus's Thermal Scan tags nearby foes for bonus damage; enemies remain hidden behind walls and outside your sight. Halcyon's Bubble Bay drops a dome that blocks every shot in both directions for a few seconds.</li>
     <li>Veil can zoom (Z, or the Zoom button): a much tighter cone that sees much farther, while moving slower.</li>
     <li>Blackout Pulse: now and then the lights fail. Every cone narrows, flares light a few zones, and firing lights you up for two seconds.</li>
     <li>In 2v2, lethal damage downs you while your partner lives. Stand still beside a downed ally to revive them; a downed ally can crawl, and stands up with 35% health. A foe standing still beside you finishes you.</li>
@@ -7557,7 +7555,8 @@ function netLobby(){
   <div class="group"><label class="glabel" for="nPassE">${NET.room&&NET.room.locked?'New password':'Password'}</label><input class="nin" id="nPassE" type="password" maxlength="32" placeholder="${NET.room&&NET.room.locked?'Leave empty to keep the current one':'Leave empty for an open room'}" autocomplete="new-password"></div>
   <div class="nrow"><button class="go ghost" data-act="n_roomset">Save</button>${NET.room&&NET.room.locked?'<button class="go ghost" data-act="n_unlock">Remove password</button>':''}</div></details>`:''}
   <details class="how" id="netCharacterPicker"><summary>Change character</summary>${wepGrid()}</details>
-  <div class="pfoot"><button class="go" data-act="n_ready" aria-pressed="${!!(me&&me.ready)}">${me&&me.ready?'Unready':'Ready up'}</button>${host?`<button class="go" data-act="n_start" ${NET.players.every(p=>p.ready)?'':'disabled'}>Start match</button>`:''}</div>
+  ${NET.countdown?`<p class="lede" role="status" aria-live="polite" style="font-size:32px;font-weight:800">Match starts in ${NET.countdown}...</p>`:''}
+  <div class="pfoot"><button class="go" data-act="n_ready" aria-pressed="${!!(me&&me.ready)}">${me&&me.ready?'Unready':'Ready up'}</button>${host?`<button class="go" data-act="n_start" ${!NET.countdown&&NET.players.every(p=>p.ready)?'':'disabled'}>${NET.countdown?'Starting...':'Start match'}</button>`:''}</div>
   <p class="lede">${NET.players.filter(p=>p.ready).length}/${NET.players.length} ready · Changing your hero or team clears your ready status.</p>
   <button class="go ghost" data-act="n_leave">Leave room</button>`);
   if(picker){panel.querySelector('#netCharacterPicker').replaceWith(picker);panel.scrollTop=scroll;}
@@ -7576,7 +7575,7 @@ function netAct2(act,v){
     case'n_unlock':if(NET.role==='host')netSend({t:'roomset',pass:''});break;
     case'n_join':{netReadForm();const c=($('#nCode').value||'').trim().toUpperCase();if(c.length!==4){NET.notice='Enter the 4 letter room code.';netMenu();break}NET.notice='';netConnect(()=>netSend({t:'join',code:c,name:NET.name,weapon:G.pick}));break}
     case'n_ready':{const me=NET.players.find(p=>p.pid===NET.pid);if(me)netSend({t:'upd',ready:!me.ready});break;}
-    case'n_start':if(NET.role==='host'&&NET.players.length&&NET.players.every(p=>p.ready))netSend({t:'start',diff:G.diff});break;
+    case'n_start':if(!NET.countdown&&NET.role==='host'&&NET.players.length&&NET.players.every(p=>p.ready))netSend({t:'start',diff:G.diff});break;
     case'n_leave':netLeave();break;
     case'n_lobby':netSend({t:'lobby'});break;
     case'n_rematch':if(NET.role==='host'){netSend({t:'rematch',diff:G.diff});if(!NET.auth)netHostStart()}break;
