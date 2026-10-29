@@ -781,7 +781,7 @@ const CHARS={
   sniper:{spd:1.1,hpMax:195,name:'Veil',role:'Ghost',ab:'Cloak',btn:'CLOAK',cd:20,desc:'Vanish for 5s. Foes only spot you up close. Firing breaks it. Z zooms: a much tighter cone that sees much farther'},
   rocket:{spd:.96,hpMax:160,name:'Torque',role:'Demolisher',ab:'Rocket Jump',btn:'JUMP',cd:14,desc:'Fires a rocket at your feet and launches you about 320 units the way you are moving (the way you aim if standing still). You fly over walls. The blast hurts nearby foes, never you'},
   crossbow:{spd:1.04,hpMax:150,name:'Lattice',role:'Warden',ab:'Tesla Fence',btn:'FENCE',cd:15,desc:'Throw up to four linked posts. A ring shows how far the next one can go. Foes crossing a beam take 20 damage and are slowed. Close the loop to electrify the inside. You and your ally take 30% less damage standing inside it (Static Cloak)'},
-  carbine:{spd:1.0,hpMax:160,name:'Argus',role:'Spotter',ab:'Thermal Scan',btn:'SCAN',cd:17,desc:'A pulse tags every foe within 650 units for 4.5s. Tagged foes are colored by health while in sight. Tagged foes take 25% more from your carbine'},
+  carbine:{spd:1.0,hpMax:160,name:'Argus',role:'Spotter',ab:'Thermal Scan',btn:'SCAN',cd:17,desc:'A pulse tags every foe within 650 units for 4.5s. After casting, you and your ally see tagged foes through walls, colored by health. Tagged foes take 25% more from your carbine'},
   scorch:{spd:.94,hpMax:240,name:'Halcyon',role:'Protector',ab:'Bubble Bay',btn:'DOME',cd:22,desc:'Drop a dome that fits about five fighters. It blocks every shot in both directions for 8s or 500 damage, but never blocks movement'},
   sword:{spd:1.35,hpMax:160,name:'Sabre',role:'Duelist',ab:'Lunge',btn:'LUNGE',cd:7,desc:'Dashes through the nearest foe within 380 units and lands on the far side, dealing three slashes of damage in one pass and leaving a swipe. Nothing can hit you mid-lunge'},
   hammer:{spd:1.0,hpMax:250,name:'Anvil',role:'Juggernaut',ab:'Leap Slam',btn:'LEAP',cd:9,desc:'Hurl yourself into the air toward your aim and crash down: 40 damage and a heavy slow where you land, and zombies there are stunned for 1.2s. You fly over walls and nothing can hit you in the air'},
@@ -6481,7 +6481,7 @@ function render0(){
     bpPlate(e,isAlly(P,e)?'#3ee08f':'#ff4d6d',false);
   }
   for(const d of G.fx)if(d.kind==='death'&&inView(d.x,d.y,90)&&(reveal||(P.alive&&canSee(P,{x:d.x,y:d.y,r:16,cloakT:0}))))drawDeath(d);
-  if(P.alive&&!G.spectating){drawAim(P);if(AIM.slot!=='q')drawAbilityAim(P);drawAimInd(P);if(G.molo>0)drawMoloAim(P)}
+  if(P.alive&&!G.spectating){drawAim(P);if(AIM.slot!=='q')drawAbilityAim(P);if(G.molo>0)drawMoloAim(P)}
   if(G.debug)drawDebug(V,inView);
   for(const f of G.fighters)if(f.hook&&f.alive&&(inView(f.x,f.y,600)))drawHook(f);
   for(const d of G.deploys)if(d.kind==='uplink'&&!d.done&&d.tg){const q=clamp(d.t/UPLINK.delay,0,1);for(const e of d.tg){if(!e.alive||!inView(e.x,e.y,80))continue;
@@ -6569,6 +6569,8 @@ function render0(){
   }
   // storm
   ctx.restore(); // End sight-clipped combat visuals.
+  // Placement previews show their full area, without revealing targets.
+  if(P.alive&&!G.spectating)drawAimInd(P);
   const st=storm(G.time);
   ctx.beginPath();ctx.rect(-3000,-3000,WORLD+6000,WORLD+6000);ctx.arc(st.cx,st.cy,Math.max(st.r,.1),0,TAU,true);
   ctx.fillStyle=rgba(COL.storm,.14);ctx.fill('evenodd');
@@ -6598,7 +6600,7 @@ function render0(){
       ctx.globalCompositeOperation='source-over';
       if(P.alive&&!G.debug){const [rx,ry]=S(P.x,P.y),rr=(P.r+8)*zz,pu=.5+.5*Math.sin(G.time*3);ctx.save();const rg=ctx.createRadialGradient(rx,ry,rr*.5,rx,ry,rr*2.2);rg.addColorStop(0,'rgba(255,255,255,0)');rg.addColorStop(.45,'rgba(180,230,230,.22)');rg.addColorStop(1,'rgba(180,230,230,0)');ctx.fillStyle=rg;ctx.fillRect(rx-rr*2.2,ry-rr*2.2,rr*4.4,rr*4.4);ctx.globalAlpha=.35+.2*pu;ctx.strokeStyle=COL.you;ctx.lineWidth=2;ctx.beginPath();ctx.arc(rx,ry,rr,0,TAU);ctx.stroke();ctx.restore()}
     }
-    for(let _i37=0,_a37=G.fighters;_i37<_a37.length;_i37++){const e=_a37[_i37];if(e===P||!e.alive||e.zomb||!tagVis(P,e)||!visualCanSee(P,e))continue;const [sx,sy]=S(e.x,e.y),h=clamp(e.hp/mhp(e),0,1),c=`hsl(${Math.round(h*120)},95%,58%)`;
+    for(let _i37=0,_a37=G.fighters;_i37<_a37.length;_i37++){const e=_a37[_i37];if(e===P||!e.alive||e.zomb||!tagVis(P,e))continue;const [sx,sy]=S(e.x,e.y),h=clamp(e.hp/mhp(e),0,1),c=`hsl(${Math.round(h*120)},95%,58%)`;
       if(!PERF.lite){ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(sx,sy,2,sx,sy,34*zz);g.addColorStop(0,c);g.addColorStop(1,'rgba(0,0,0,0)');ctx.globalAlpha=.55;ctx.fillStyle=g;ctx.fillRect(sx-34*zz,sy-34*zz,68*zz,68*zz);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}
       ctx.strokeStyle=c;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(sx,sy,(e.r+9)*zz,0,TAU);ctx.stroke()}
     if(P.alive&&P.fenceT>0&&!G.debug){const L=fenceLink(P),c0=L.last||P,[sx,sy]=S(c0.x,c0.y);ctx.strokeStyle=rgba(L.ok?'#7fe0ff':'#ff4d5e',.6);ctx.setLineDash([10,8]);ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx,sy,fenceRange(P)*zz,0,TAU);ctx.stroke();ctx.setLineDash([]);
@@ -7424,7 +7426,7 @@ function howList(){const K=a=>keyName((BIND[a]||BIND_DEF[a]||[])[0]),A=a=>(ALT[a
     <li>Tap Dash to slip through bullets. You can't be hit mid-dash.</li>
     <li>Tap the purple Signature button (${K('ability')} on a keyboard) to use your hero's signature. It has a cooldown. The Skill button (${K('skill')}) and the pink ULT button (${K('ult')}) sit beside it. Cinder's Molotov works differently: tap the button, then tap anywhere inside the ring to throw it there (click on a keyboard).</li>
     <li>Torque's Rocket Jump launches him the way he moves and carries him over walls. Sabre's Lunge dashes at the nearest foe in range.</li>
-    <li>Lattice's Tesla Fence: each press throws a linked post (up to four) inside the ring that shows your reach. Foes crossing a beam take damage and slow; place a post on your first one to close the loop and electrify the inside. Argus's Thermal Scan tags nearby foes for bonus damage; enemies remain hidden behind walls and outside your sight. Halcyon's Bubble Bay drops a dome that blocks every shot in both directions for a few seconds.</li>
+    <li>Lattice's Tesla Fence: each press throws a linked post (up to four) inside the ring that shows your reach. Foes crossing a beam take damage and slow; place a post on your first one to close the loop and electrify the inside. Argus's Thermal Scan reveals nearby foes through walls after casting and tags them for bonus damage. Its aiming preview shows only the scan area. Halcyon's Bubble Bay drops a dome that blocks every shot in both directions for a few seconds.</li>
     <li>Veil can zoom (Z, or the Zoom button): a much tighter cone that sees much farther, while moving slower.</li>
     <li>Blackout Pulse: now and then the lights fail. Every cone narrows, flares light a few zones, and firing lights you up for two seconds.</li>
     <li>In 2v2, lethal damage downs you while your partner lives. Stand still beside a downed ally to revive them; a downed ally can crawl, and stands up with 35% health. A foe standing still beside you finishes you.</li>
