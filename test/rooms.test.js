@@ -65,6 +65,7 @@ test('full room: a 1v1 room refuses a third player', async t => {
 test('cannot join a match that already started', async t => {
   const srv = await setup(t);
   const { host, joined } = await makeRoom(srv);
+  host.send({ t: 'upd', ready: true });
   host.send({ t: 'start' });
   await host.waitFor('players', 3000, m => m.started === true);
   const g = await connect(srv);
@@ -75,6 +76,7 @@ test('cannot join a match that already started', async t => {
 test('quick skips started and full rooms and makes a new lobby', async t => {
   const srv = await setup(t);
   const a = await makeRoom(srv, 'A');
+  a.host.send({ t: 'upd', ready: true });
   a.host.send({ t: 'start' });
   await a.host.waitFor('players', 3000, m => m.started === true);
   const b = await makeRoom(srv, 'B');
@@ -103,6 +105,7 @@ test('quick joins an open lobby instead of creating another', async t => {
 test('auth: quick refuses to create a lobby when the match cap is reached', async t => {
   const srv = await setup(t, { MODE: 'auth', MAX_MATCHES: '1' });
   const { host } = await makeRoom(srv);
+  host.send({ t: 'upd', ready: true });
   host.send({ t: 'start' });
   await host.waitFor('players', 8000, m => m.started === true);
   const q = await connect(srv);
@@ -161,6 +164,7 @@ test('sweeper removes unstarted lobbies older than ROOM_MAX_AGE_MS', async t => 
 test('sweeper keeps started matches regardless of age', async t => {
   const srv = await setup(t, { SWEEP_MS: '100', ROOM_MAX_AGE_MS: '500' });
   const { host } = await makeRoom(srv);
+  host.send({ t: 'upd', ready: true });
   host.send({ t: 'start' });
   await host.waitFor('players', 3000, m => m.started === true);
   await sleep(1500);

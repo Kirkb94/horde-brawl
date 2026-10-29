@@ -51,6 +51,7 @@ function validateMsg(m) {
       if (m.mods !== undefined && !(Array.isArray(m.mods) && m.mods.length <= 32 && m.mods.every(k => str(k, 32)))) return fail('Invalid modifiers.');
       return { ok: true, msg: m };
     case 'upd':
+      if (m.ready !== undefined && typeof m.ready !== 'boolean') return fail('Invalid ready state.');
       if (m.name !== undefined && !str(m.name, 64)) return fail('Invalid name.');
       if (m.weapon !== undefined && !str(m.weapon, 32)) return fail('Invalid weapon.');
       if (m.team !== undefined && m.team !== 0 && m.team !== 1) return fail('Invalid team.');

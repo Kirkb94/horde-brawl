@@ -21,6 +21,9 @@ async function startedRoom(srv) {
   guest.send({ t: 'join', code: hj.code, name: 'Guest' });
   const gj = await guest.waitFor('joined');
   await host.waitFor('players', 3000, m => m.players.length === 2);
+  guest.send({ t: 'upd', ready: true });
+  await host.waitFor('players', 3000, m => m.players.some(p => p.pid === gj.pid && p.ready));
+  host.send({ t: 'upd', ready: true });
   host.send({ t: 'start' });
   await host.waitFor('players', 10000, m => m.started === true);
   return { host, guest, code: hj.code, hj, gj };

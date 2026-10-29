@@ -418,7 +418,7 @@ const DIFFS = ['easy', 'normal', 'hard'];
 function startSim(room, diff) {
   diff = typeof diff === 'string' && DIFFS.includes(diff) ? diff : 'normal';
   clearHolds(room);
-  const players = [...room.players.values()].map(p => ({ pid: p.pid, name: p.name, weapon: p.weapon, team: p.team }));
+  const players = [...room.players.values()].map(p => ({ pid: p.pid, name: p.name, weapon: p.weapon, team: p.team, ready: !!p.ready }));
   const sendTo = (p, str, d) => relaySend(p, str, d);
   const io = {
     rel(to, d) {
@@ -478,7 +478,7 @@ function balanceTeams(room) {
   while (a.length > half && b.length < half) { const q = a.pop(); q.team = 1; b.push(q); }
   while (b.length > half && a.length < half) { const q = b.pop(); q.team = 0; a.push(q); }
 }
-const list = room => [...room.players.values()].map(p => ({ pid: p.pid, name: p.name, weapon: p.weapon, team: p.team }));
+const list = room => [...room.players.values()].map(p => ({ pid: p.pid, name: p.name, weapon: p.weapon, team: p.team, ready: !!p.ready }));
 function bcastPlayers(room) {
   const msg = { t: 'players', host: room.host, players: list(room), started: room.started, cfg: room.cfg, room: { name: room.name || '', locked: !!room.pass } };
   for (const p of room.players.values()) send(p.ws, msg);
@@ -493,7 +493,7 @@ function joinRoom(ws, room, name, weapon) {
   if (block) return send(ws, { t: 'err', msg: block });
   leaveRoom(ws);
   const nA = [...room.players.values()].filter(q => q.team === 0).length, nB = room.players.size - nA;
-  const p = { ws, token: newToken(), pid: nextPid++, name: uniqueName(room, name), weapon: WEAPONS.includes(weapon) ? weapon : 'rifle', team: nA <= nB ? 0 : 1 };
+  const p = { ws, ready: false, token: newToken(), pid: nextPid++, name: uniqueName(room, name), weapon: WEAPONS.includes(weapon) ? weapon : 'rifle', team: nA <= nB ? 0 : 1 };
   ws.p = p; ws.room = room;
   room.players.set(p.pid, p);
   if (!room.host) room.host = p.pid;
@@ -659,6 +659,7 @@ wss.on('connection', (ws, req) => {
         const map = m.map !== undefined ? m.map : room.cfg.map;
         if (m.mods !== undefined && !Array.isArray(m.mods)) return send(ws, { t: 'err', msg: 'Invalid modifiers.' });
         const mods = m.mods !== undefined ? MOD_KEYS.filter(k => m.mods.includes(k)) : (room.cfg.mods || []);
+        if (JSON.stringify(room.cfg) !== JSON.stringify({ mode, size, map, mods })) for (const q of room.players.values()) q.ready = false;
         room.cfg = { mode, size, map, mods };
         balanceTeams(room);
         return bcastPlayers(room);
@@ -669,13 +670,17 @@ wss.on('connection', (ws, req) => {
         if (m.name !== undefined && typeof m.name !== 'string') return send(ws, { t: 'err', msg: 'Invalid name.' });
         if (m.weapon !== undefined && typeof m.weapon !== 'string') return send(ws, { t: 'err', msg: 'Invalid weapon.' });
         if (m.team !== undefined && m.team !== 0 && m.team !== 1) return send(ws, { t: 'err', msg: 'Invalid team.' });
+        const oldWeapon = p.weapon, oldTeam = p.team;
+        if (typeof m.ready === 'boolean') p.ready = m.ready;
         if (m.team === 0 || m.team === 1) { const n = [...room.players.values()].filter(q => q !== p && q.team === m.team).length; if (room.cfg.mode !== 'team' || n < teamSize(room.cfg.size)) p.team = m.team; else send(ws, { t: 'err', msg: 'That team is full.' }); }
         if (typeof m.name === 'string' && clean(m.name, 14)) p.name = uniqueName({ players: new Map([...room.players].filter(([k]) => k !== p.pid)) }, m.name);
         if (WEAPONS.includes(m.weapon)) p.weapon = m.weapon;
+        if (p.weapon !== oldWeapon || p.team !== oldTeam) p.ready = false;
         return bcastPlayers(room);
       }
       case 'start':
         if (room && p && p.pid === room.host && !room.started) {
+          if ([...room.players.values()].some(q => !q.ready)) return send(ws, { t: 'err', msg: 'Everyone must ready up before starting.' });
           if (!room.auth) {
             let bad = null;
             for (const q of room.players.values()) if (!q.ws || q.ws.readyState !== 1) { bad = q; break; }   // missing, 2 = CLOSING or 3 = CLOSED
@@ -698,7 +703,7 @@ wss.on('connection', (ws, req) => {
           }
           bcastPlayers(room);
         } return;
-      case 'lobby': if (room && p && p.pid === room.host) { clearHolds(room); stopSim(room); room.started = false; bcastPlayers(room); } return;
+      case 'lobby': if (room && p && p.pid === room.host) { clearHolds(room); stopSim(room); room.started = false; for (const q of room.players.values()) q.ready = false; bcastPlayers(room); } return;
       case 'rejoin': {
         if (ws.rjFails >= MAX_REJOIN_FAILS) return;
         if (joinLimited(ws)) return;
