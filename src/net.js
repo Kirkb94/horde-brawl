@@ -259,6 +259,9 @@ function modGroup(){const m=NET.cfg.mods||[];return `<div class="group"><span cl
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-act=n_mod]');if(!b||NET.role!=='host'||NET.view!=='lobby')return;const k=b.dataset.v,m=(NET.cfg.mods||[]).slice(),i=m.indexOf(k);if(i>=0)m.splice(i,1);else if(MODS[k])m.push(k);NET.cfg.mods=m;b.setAttribute('aria-pressed',m.includes(k));netSend({t:'cfg',mode:NET.cfg.mode,size:NET.cfg.size,map:NET.cfg.map,mods:m})});
 (function(){const el=document.createElement('div');el.id='modStrip';el.style.cssText='position:fixed;top:22px;left:50%;transform:translateX(-50%);z-index:9;pointer-events:none;font:700 11px var(--mono);color:#ffd166;background:rgba(0,0,0,.6);border:1px solid #ffd16688;border-radius:4px;padding:3px 8px;letter-spacing:.05em;display:none;max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';(document.body||document.documentElement).appendChild(el);setInterval(()=>{const m=((G.cfg&&G.cfg.mods)||[]).filter(k=>MODS[k]),on=!!G.P&&G.mode!=='menu'&&m.length>0;if(!on){if(el.style.display!=='none')el.style.display='none';return}const t='MODIFIERS: '+m.map(k=>MODS[k][0]).join(' · ');if(el.textContent!==t)el.textContent=t;el.style.display='block'},400)})();
 function netLobby(){
+  // Lobby broadcasts must not dismiss a player's open character picker.
+  const picker=NET.view==='lobby'&&G.mode==='menu'?panel.querySelector('#netCharacterPicker'):null;
+  const scroll=picker?panel.scrollTop:0;
   NET.view='lobby';G.mode='menu';G.P=null;showHUD(false);
   const host=NET.role==='host',cfg=NET.cfg,tm=cfg.mode==='team',capN=netCap(),me=NET.players.find(p=>p.pid===NET.pid);
   const tl=t=>t===1?'Team B':'Team A';
@@ -272,9 +275,10 @@ function netLobby(){
   ${cfg.mode==='br'?`<div class="group"><label class="glabel" for="nsize">Lobby size · <b id="nsizeV">${cfg.size}</b> fighters (empty slots are bots)</label><input class="nin" type="range" id="nsize" min="${Math.max(2,NET.players.length)}" max="16" value="${cfg.size}" style="padding:6px"></div>`:`<p class="lede">${cfg.mode==='duel'?'1v1: a small arena with a light zombie horde. First to 3 round wins.':'2v2: two teams of two, pick yours above. Bots fill empty team slots. Allies cannot hurt each other.'}</p>`}
   ${modGroup()}
   <div class="group"><span class="glabel">Bot skill</span><div class="seg">${Object.keys(DIFF).map(k=>`<button data-act="diff" data-v="${k}" aria-pressed="${G.diff===k}">${cap(k)}</button>`).join('')}</div></div>`:''}
-  <details class="how"><summary>Change character</summary>${wepGrid()}</details>
+  <details class="how" id="netCharacterPicker"><summary>Change character</summary>${wepGrid()}</details>
   ${host?'<div class="pfoot"><button class="go" data-act="n_start">Start match</button></div>':''}
   <button class="go ghost" data-act="n_leave">Leave room</button>`);
+  if(picker){panel.querySelector('#netCharacterPicker').replaceWith(picker);panel.scrollTop=scroll;}
 }
 function netAct2(act,v){
   switch(act){

@@ -98,6 +98,9 @@ function netReadForm(){
 function netCap(){const c=NET.cfg;return c.mode==='duel'?2:c.mode==='team'?4:c.size}
 function netSizeChange(v){if(NET.role==='host'){NET.cfg.size=v;const e=$('#nsizeV');if(e)e.textContent=v;clearTimeout(netSizeChange.t);netSizeChange.t=setTimeout(()=>netSend({t:'cfg',mode:NET.cfg.mode,size:v}),150)}}
 function netLobby(){
+  // Lobby broadcasts must not dismiss a player's open character picker.
+  const picker=NET.view==='lobby'&&G.mode==='menu'?panel.querySelector('#netCharacterPicker'):null;
+  const scroll=picker?panel.scrollTop:0;
   NET.view='lobby';G.mode='menu';G.P=null;showHUD(false);
   const host=NET.role==='host',cfg=NET.cfg,tm=cfg.mode==='team',capN=netCap(),me=NET.players.find(p=>p.pid===NET.pid);
   const tl=t=>t===1?'Team B':'Team A';
@@ -109,9 +112,10 @@ function netLobby(){
   ${host?`<div class="group"><span class="glabel">Mode</span><div class="seg">${Object.entries(MODES).map(([k,v])=>`<button data-act="n_mode" data-v="${k}" aria-pressed="${cfg.mode===k}">${v}</button>`).join('')}</div></div>
   ${cfg.mode==='br'?`<div class="group"><span class="glabel">Lobby size · <b id="nsizeV">${cfg.size}</b> fighters (empty slots are bots)</span><input class="nin" type="range" id="nsize" min="${Math.max(2,NET.players.length)}" max="16" value="${cfg.size}" style="padding:6px"></div>`:`<p class="lede">${cfg.mode==='duel'?'1v1: a small arena with a light zombie horde. First to 3 round wins.':'2v2: two teams of two, pick yours above. Bots fill empty team slots. Allies cannot hurt each other.'}</p>`}
   <div class="group"><span class="glabel">Bot skill</span><div class="seg">${Object.keys(DIFF).map(k=>`<button data-act="diff" data-v="${k}" aria-pressed="${G.diff===k}">${cap(k)}</button>`).join('')}</div></div>`:''}
-  <details class="how"><summary>Change character</summary>${wepGrid()}</details>
+  <details class="how" id="netCharacterPicker"><summary>Change character</summary>${wepGrid()}</details>
   ${host?'<button class="go" data-act="n_start">Start match</button>':''}
   <button class="go ghost" data-act="n_leave">Leave room</button>`);
+  if(picker){panel.querySelector('#netCharacterPicker').replaceWith(picker);panel.scrollTop=scroll;}
 }
 function netAct2(act,v){
   switch(act){
