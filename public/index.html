@@ -802,7 +802,7 @@ const KIT={
   sniper:{sk:'Shadow Step',skB:'BLINK',skCd:8,skD:'Blink silently the way you move, then 1.5s of cloak',ult:'Deadeye',ultD:'A rail shot that pierces every body in its path for 150. A kill resets Cloak'},
   rocket:{sk:'Satchel',skB:'SATCHEL',skCd:9,skD:'Lob a charge that lands, beeps for 1.1s, then blows for 130 damage',ult:'Barrage',ultD:'Twenty rockets rain around your aim point over 6s'},
   crossbow:{sk:'Overload',skB:'OVERLOAD',skCd:8,skD:'Every post you own discharges for 45 around it, then collapses. Fence recharges faster',ult:'Cage',ultD:'An electrified cage drops on the nearest foe: 15 damage a second and no way out for 5s'},
-  carbine:{sk:'Paint',skB:'PAINT',skCd:8,skD:'Marks the first foe in your sights: they take 30% more from everyone for 5s',ult:'Uplink',ultD:'Locks onto every enemy hero on the map and warns them. 1.5s later it strikes each one for 55 (a dash dodges it), roots them for 1s and marks them for 20s: they show on your team\'s map and take double damage from you'},
+  carbine:{sk:'Paint',skB:'PAINT',skCd:8,skD:'Marks the first foe in your sights: they take 30% more from everyone for 5s',ult:'Uplink',ultD:'Locks onto every enemy hero on the map and warns them. 1.5s later it strikes each one for 55 (a dash dodges it), roots them for 1s and marks them for 20s: they take double damage from you'},
   scorch:{sk:'Backdraft',skB:'PULL',skCd:10,skD:'Drags foes within 300 toward you and sets them ablaze (14 a second for 4s)',ult:'Sanctuary',ultD:'A tougher dome that heals you and allies inside 14 HP a second'},
   sword:{sk:'Parry',skB:'PARRY',skCd:7,skD:'For 0.7s every shot that hits you flies back at the shooter',ult:'Thousand Cuts',ultD:'Blink through up to six nearby foes, 55 damage each'},
   hammer:{sk:'Shockwave',skB:'QUAKE',skCd:15,skD:'Slam the ground and send a narrow shockwave rolling out in front of you. Foes in its path are rooted for 2s the moment you cast, then take 20 damage and are stunned for 2s when it reaches them. Against zombies it fans out wide and stuns the whole crowd',ult:'Unbound',ultD:'For 10s you glow with power and your max health becomes 1000, filled to the top. When it ends you drop back to your normal max'},
@@ -1579,6 +1579,22 @@ function rayCast(ox,oy,ang,maxD){
     if(ix<0||iy<0||ix>=n||iy>=n)break;
   }
   return t;
+}
+// Rendering visibility is strict: marks, scans and muzzle flashes never grant wall vision.
+function visualCanSee(viewer,target){
+  const dx=target.x-viewer.x,dy=target.y-viewer.y,d=Math.hypot(dx,dy);
+  if(d>vr(viewer)||(target.cloakT>0&&d>130))return false;
+  if(d>NEAR&&Math.abs(angDiff(viewer.facing,Math.atan2(dy,dx)))>fv(viewer)/2)return false;
+  return rayCast(viewer.x,viewer.y,Math.atan2(dy,dx),d)>=d;
+}
+function clipPlayerSight(viewer){
+  // Union the wall-clipped cone with close-range awareness; clip whole effects, not just their centers.
+  const spread=fv(viewer),range=vr(viewer);
+  ctx.beginPath();ctx.moveTo(viewer.x,viewer.y);
+  for(let i=0;i<=144;i++){const a=viewer.facing-spread/2+i*spread/144,d=rayCast(viewer.x,viewer.y,a,range);ctx.lineTo(viewer.x+Math.cos(a)*d,viewer.y+Math.sin(a)*d)}
+  ctx.closePath();
+  for(let i=0;i<=144;i++){const a=i*TAU/144,d=rayCast(viewer.x,viewer.y,a,Math.min(NEAR,range)),x=viewer.x+Math.cos(a)*d,y=viewer.y+Math.sin(a)*d;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}
+  ctx.closePath();ctx.clip();
 }
 function inFlare(x,y){for(const d of G.deploys)if(d.kind==='flare'&&Math.hypot(x-d.x,y-d.y)<d.R)return true;return false}
 function canSee(a,b){
@@ -6444,6 +6460,8 @@ function render0(){
       ctx.fillStyle=big?'#ffffff':'#d9392b';const c=big?6:3.4;ctx.fillRect(o.x-c/2,by-h*.34,c,h*.68);ctx.fillRect(o.x-h*.34,by-c/2,h*.68,c);continue}
     const s=1+Math.sin(o.t*4)*.15;orbGlow(o.x,o.y,28,COL.orb,o.t);
     ctx.fillStyle=COL.orb;ctx.beginPath();ctx.moveTo(o.x,o.y-8*s);ctx.lineTo(o.x+6*s,o.y);ctx.lineTo(o.x,o.y+8*s);ctx.lineTo(o.x-6*s,o.y);ctx.closePath();ctx.fill()}
+  ctx.save();
+  if(!reveal&&!G.debug)clipPlayerSight(V);
   zxDrawGround(inView);
   for(const d of G.fx)if(d.kind==='splat'&&inView(d.x,d.y,70)&&(reveal||(P.alive&&canSee(P,{x:d.x,y:d.y,r:10,cloakT:0})))){ctx.save();ctx.translate(d.x,d.y);ctx.rotate(d.a);ctx.globalAlpha=clamp(1-d.age/d.life,0,1)*.7;ctx.fillStyle='#4a1017';ctx.beginPath();ctx.ellipse(0,0,d.r*1.2,d.r*.8,0,0,TAU);ctx.fill();ctx.fillStyle='#3d5a26';ctx.beginPath();ctx.ellipse(d.r*.3,-d.r*.1,d.r*.6,d.r*.4,0,0,TAU);ctx.fill();ctx.restore()}
   for(const d of G.fx)if(d.kind==='hmark'&&inView(d.x,d.y,d.r+20))drawHmark(d);
@@ -6457,7 +6475,7 @@ function render0(){
   ctx.textAlign='center';
   for(let _i32=0,_a32=G.fighters;_i32<_a32.length;_i32++){const e=_a32[_i32];
     if((e===P&&!G.debug)||!e.alive||!inView(e.x,e.y,50))continue;
-    if(!(reveal||e.markT>0||isAlly(P,e)||tagVis(P,e)||(P.alive&&canSee(P,e))))continue;
+    if(!(reveal||G.debug||(P.alive&&visualCanSee(P,e))))continue;
     if(e.zomb){if(e.struct)continue;if(e.siege)sgZombieRing(e);drawZombie(e);drawStatus(e);if(e.hp<mhp(e)){const w=e.r*2.2,y=e.y-e.r-12;ctx.fillStyle=COL.void;ctx.fillRect(e.x-w/2,y,w,4);ctx.fillStyle='#9be36b';ctx.fillRect(e.x-w/2,y,w*clamp(e.hp/mhp(e),0,1),4)}continue}
     const ac=isAlly(P,e)?COL.you:COL.foe;drawFighter(e,ac);drawStatus(e);if(e.down)drawDown(e);
     bpPlate(e,isAlly(P,e)?'#3ee08f':'#ff4d6d',false);
@@ -6550,6 +6568,7 @@ function render0(){
     else if(f.kind==='boom'){const k=f.age/f.life;ctx.fillStyle=rgba(FIRE,.22*(1-k));ctx.beginPath();ctx.arc(f.x,f.y,f.r*(.4+.6*k),0,TAU);ctx.fill();ctx.strokeStyle=rgba(FIRE,.9*(1-k));ctx.lineWidth=3;ctx.stroke()}
   }
   // storm
+  ctx.restore(); // End sight-clipped combat visuals.
   const st=storm(G.time);
   ctx.beginPath();ctx.rect(-3000,-3000,WORLD+6000,WORLD+6000);ctx.arc(st.cx,st.cy,Math.max(st.r,.1),0,TAU,true);
   ctx.fillStyle=rgba(COL.storm,.14);ctx.fill('evenodd');
@@ -6570,14 +6589,16 @@ function render0(){
     if(bo&&bo.s===2){
       {const pr=320*zz,[px,py]=S(P.x,P.y),og=ctx.createRadialGradient(px,py,pr*.15,px,py,pr);og.addColorStop(0,'rgba(2,4,14,.08)');og.addColorStop(1,'rgba(2,4,14,.34)');ctx.fillStyle=og;ctx.fillRect(0,0,VW,VH);
       if(P.alive&&!G.debug){ctx.lineWidth=1.5;for(let _i35=0,_a35=RECTS;_i35<_a35.length;_i35++){const r=_a35[_i35];if(r.x<0)continue;const nx=clamp(P.x,r.x,r.x+r.w),ny=clamp(P.y,r.y,r.y+r.h),d=Math.hypot(nx-P.x,ny-P.y);if(d>320)continue;const [rx,ry]=S(r.x,r.y);ctx.strokeStyle=`rgba(200,225,235,${.4*(1-d/320)})`;ctx.strokeRect(rx,ry,r.w*zz,r.h*zz)}
-        for(let _i36=0,_a36=G.fighters;_i36<_a36.length;_i36++){const e=_a36[_i36];if(!e.zomb||!e.alive)continue;const d=Math.hypot(e.x-P.x,e.y-P.y);if(d>320)continue;const [ex,ey]=S(e.x,e.y);ctx.fillStyle=`rgba(255,70,50,${.55*(1-d/320)})`;ctx.beginPath();ctx.arc(ex,ey,Math.max(3,e.r*zz),0,TAU);ctx.fill()}}}
+        for(let _i36=0,_a36=G.fighters;_i36<_a36.length;_i36++){const e=_a36[_i36];if(!e.zomb||!e.alive)continue;const d=Math.hypot(e.x-P.x,e.y-P.y);if(d>320||!visualCanSee(P,e))continue;const [ex,ey]=S(e.x,e.y);ctx.fillStyle=`rgba(255,70,50,${.55*(1-d/320)})`;ctx.beginPath();ctx.arc(ex,ey,Math.max(3,e.r*zz),0,TAU);ctx.fill()}}}
+      ctx.save();if(!reveal&&!G.debug){ctx.setTransform(DPR*z,0,0,DPR*z,DPR*(VW/2-G.cam.x*z),DPR*(VH/2-G.cam.y*z));clipPlayerSight(V);ctx.setTransform(DPR,0,0,DPR,0,0);}
       ctx.globalCompositeOperation=PERF.lite?'source-over':'lighter';
-      for(const d of G.deploys)if(d.kind==='flare'){const [sx,sy]=S(d.x,d.y),r=d.R*zz,g=ctx.createRadialGradient(sx,sy,r*.1,sx,sy,r);g.addColorStop(0,'rgba(255,170,80,.45)');g.addColorStop(1,'rgba(255,120,40,0)');ctx.fillStyle=g;ctx.fillRect(sx-r,sy-r,r*2,r*2)}
-      for(const f of G.fighters)if(f.alive&&!f.zomb&&f.litT>0&&(f===P||isAlly(P,f)||canSee(P,f))){const [sx,sy]=S(f.x,f.y),r=70*zz,g=ctx.createRadialGradient(sx,sy,r*.1,sx,sy,r);g.addColorStop(0,`rgba(255,200,120,${.4*Math.min(1,f.litT)})`);g.addColorStop(1,'rgba(255,160,60,0)');ctx.fillStyle=g;ctx.fillRect(sx-r,sy-r,r*2,r*2)}
+      for(const d of G.deploys)if(d.kind==='flare'&&(reveal||G.debug||visualCanSee(P,d))){const [sx,sy]=S(d.x,d.y),r=d.R*zz,g=ctx.createRadialGradient(sx,sy,r*.1,sx,sy,r);g.addColorStop(0,'rgba(255,170,80,.45)');g.addColorStop(1,'rgba(255,120,40,0)');ctx.fillStyle=g;ctx.fillRect(sx-r,sy-r,r*2,r*2)}
+      for(const f of G.fighters)if(f.alive&&!f.zomb&&f.litT>0&&(f===P||visualCanSee(P,f))){const [sx,sy]=S(f.x,f.y),r=70*zz,g=ctx.createRadialGradient(sx,sy,r*.1,sx,sy,r);g.addColorStop(0,`rgba(255,200,120,${.4*Math.min(1,f.litT)})`);g.addColorStop(1,'rgba(255,160,60,0)');ctx.fillStyle=g;ctx.fillRect(sx-r,sy-r,r*2,r*2)}
+      ctx.restore();
       ctx.globalCompositeOperation='source-over';
       if(P.alive&&!G.debug){const [rx,ry]=S(P.x,P.y),rr=(P.r+8)*zz,pu=.5+.5*Math.sin(G.time*3);ctx.save();const rg=ctx.createRadialGradient(rx,ry,rr*.5,rx,ry,rr*2.2);rg.addColorStop(0,'rgba(255,255,255,0)');rg.addColorStop(.45,'rgba(180,230,230,.22)');rg.addColorStop(1,'rgba(180,230,230,0)');ctx.fillStyle=rg;ctx.fillRect(rx-rr*2.2,ry-rr*2.2,rr*4.4,rr*4.4);ctx.globalAlpha=.35+.2*pu;ctx.strokeStyle=COL.you;ctx.lineWidth=2;ctx.beginPath();ctx.arc(rx,ry,rr,0,TAU);ctx.stroke();ctx.restore()}
     }
-    for(let _i37=0,_a37=G.fighters;_i37<_a37.length;_i37++){const e=_a37[_i37];if(e===P||!e.alive||e.zomb||!tagVis(P,e))continue;const [sx,sy]=S(e.x,e.y),h=clamp(e.hp/mhp(e),0,1),c=`hsl(${Math.round(h*120)},95%,58%)`;
+    for(let _i37=0,_a37=G.fighters;_i37<_a37.length;_i37++){const e=_a37[_i37];if(e===P||!e.alive||e.zomb||!tagVis(P,e)||!visualCanSee(P,e))continue;const [sx,sy]=S(e.x,e.y),h=clamp(e.hp/mhp(e),0,1),c=`hsl(${Math.round(h*120)},95%,58%)`;
       if(!PERF.lite){ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(sx,sy,2,sx,sy,34*zz);g.addColorStop(0,c);g.addColorStop(1,'rgba(0,0,0,0)');ctx.globalAlpha=.55;ctx.fillStyle=g;ctx.fillRect(sx-34*zz,sy-34*zz,68*zz,68*zz);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}
       ctx.strokeStyle=c;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(sx,sy,(e.r+9)*zz,0,TAU);ctx.stroke()}
     if(P.alive&&P.fenceT>0&&!G.debug){const L=fenceLink(P),c0=L.last||P,[sx,sy]=S(c0.x,c0.y);ctx.strokeStyle=rgba(L.ok?'#7fe0ff':'#ff4d5e',.6);ctx.setLineDash([10,8]);ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx,sy,fenceRange(P)*zz,0,TAU);ctx.stroke();ctx.setLineDash([]);
@@ -6704,7 +6725,7 @@ function drawMinimap(st,reveal){
   if(st.next){ctx.strokeStyle=rgba(COL.ink,.6);ctx.setLineDash([3,3]);ctx.beginPath();ctx.arc(x+st.next.x*k,y+st.next.y*k,Math.max(1,st.next.r*k),0,TAU);ctx.stroke();ctx.setLineDash([])}
   ctx.restore();
   ctx.fillStyle=COL.foe;
-  for(const e of G.fighters){if(e.zomb&&e.alive){if(e.struct)continue;if(e.hid)continue;if(!(reveal||G.debug||e.elite||(P.alive&&(Math.hypot(e.x-P.x,e.y-P.y)<650||canSee(P,e)))))continue;const zk=e.zk,big=zk==='boss'||e.elite?4.5:zk==='brute'?3.8:zk==='crawler'?1.2:1.8;ctx.fillStyle=e.master&&isAlly(P,e)||e.master===P?'#d65cff':(zk==='hunter'||zk==='sprinter')?'#ff9a2e':'#ff3b30';ctx.beginPath();ctx.arc(x+e.x*k,y+e.y*k,big,0,TAU);ctx.fill();if(e.elite){ctx.strokeStyle='#ff3b30';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x+e.x*k,y+e.y*k,8+2*Math.sin(G.time*5),0,TAU);ctx.stroke()}continue}if((e===P&&!G.debug)||!e.alive)continue;if(reveal||e.markT>0||isAlly(P,e)||tagVis(P,e)||(P.alive&&canSee(P,e))){const al=isAlly(P,e);ctx.fillStyle=al?COL.you:COL.foe;ctx.beginPath();ctx.arc(x+e.x*k,y+e.y*k,al?3.5:2.5,0,TAU);ctx.fill();if(al){ctx.strokeStyle='#ffd23f';ctx.lineWidth=2;ctx.stroke()}}}
+  for(const e of G.fighters){if(e.zomb&&e.alive){if(e.struct)continue;if(e.hid)continue;if(!(reveal||G.debug||(P.alive&&visualCanSee(P,e))))continue;const zk=e.zk,big=zk==='boss'||e.elite?4.5:zk==='brute'?3.8:zk==='crawler'?1.2:1.8;ctx.fillStyle=e.master&&isAlly(P,e)||e.master===P?'#d65cff':(zk==='hunter'||zk==='sprinter')?'#ff9a2e':'#ff3b30';ctx.beginPath();ctx.arc(x+e.x*k,y+e.y*k,big,0,TAU);ctx.fill();if(e.elite){ctx.strokeStyle='#ff3b30';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x+e.x*k,y+e.y*k,8+2*Math.sin(G.time*5),0,TAU);ctx.stroke()}continue}if((e===P&&!G.debug)||!e.alive)continue;if(reveal||G.debug||(P.alive&&visualCanSee(P,e))){const al=isAlly(P,e);ctx.fillStyle=al?COL.you:COL.foe;ctx.beginPath();ctx.arc(x+e.x*k,y+e.y*k,al?3.5:2.5,0,TAU);ctx.fill();if(al){ctx.strokeStyle='#ffd23f';ctx.lineWidth=2;ctx.stroke()}}}
   if(P.alive&&!G.debug){const px=x+P.x*k,py=y+P.y*k,fa=P.facing||0;ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(px+Math.cos(fa)*14,py+Math.sin(fa)*14);ctx.lineTo(px+Math.cos(fa+2.4)*7,py+Math.sin(fa+2.4)*7);ctx.lineTo(px+Math.cos(fa-2.4)*7,py+Math.sin(fa-2.4)*7);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(0,0,0,.65)';ctx.beginPath();ctx.arc(px,py,8,0,TAU);ctx.fill();ctx.fillStyle=COL.you;ctx.beginPath();ctx.arc(px,py,5.5,0,TAU);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke()}
   if(G.tyrant&&G.tyrant.alive){const t=G.tyrant,tx=x+t.x*k,ty=y+t.y*k,p=5+Math.sin(G.time*6)*1.5;ctx.strokeStyle='#ff4d6a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(tx,ty,p+3,0,TAU);ctx.stroke();ctx.fillStyle='#ff4d6a';ctx.beginPath();ctx.arc(tx,ty,4,0,TAU);ctx.fill()}
   if(G.sg){ctx.save();ctx.beginPath();ctx.rect(x,y0,s,bh);ctx.clip();sgMini(x,y,k);ctx.restore()}else drawZoneArrow(st,P);
@@ -6964,7 +6985,7 @@ addEventListener('keydown',e=>{if(e.repeat&&(AIM.slot||aimHeldKey(e.code)))AIM.r
 function aimHeldKey(c){const has=a=>(BIND[a]||[]).includes(c)||(ALT[a]||[]).includes(c);return has('ability')||has('skill')||has('ult')}
 
 // ---- the ghost / area indicator ----
-function aimFoesIn(p,test){const out=[];for(const e of G.fighters){if(!foeOf(p,e)||!e.alive)continue;if(e.cloakT>0&&Math.hypot(e.x-p.x,e.y-p.y)>130)continue;if(test(e))out.push(e)}return out}
+function aimFoesIn(p,test){const out=[];for(const e of G.fighters){if(!foeOf(p,e)||!e.alive||!visualCanSee(p,e))continue;if(e.cloakT>0&&Math.hypot(e.x-p.x,e.y-p.y)>130)continue;if(test(e))out.push(e)}return out}
 function aimMark(list,col){const pu=.65+.35*Math.sin(G.time*12);for(const e of list){ctx.save();ctx.strokeStyle=rgba(col||'#ff4d6d',pu);ctx.lineWidth=3;ctx.beginPath();ctx.arc(e.x,e.y,e.r+9,0,TAU);ctx.stroke();
   ctx.fillStyle=rgba(col||'#ff4d6d',pu);ctx.beginPath();ctx.moveTo(e.x,e.y-e.r-22);ctx.lineTo(e.x-6,e.y-e.r-31);ctx.lineTo(e.x+6,e.y-e.r-31);ctx.closePath();ctx.fill();ctx.restore()}}
 function aimZone(x,y,R,col,o={}){ctx.save();const T=G.time;
@@ -7416,11 +7437,11 @@ function howList(){const K=a=>keyName((BIND[a]||BIND_DEF[a]||[])[0]),A=a=>(ALT[a
     <li>Every character has one gun and one ability, and its own cards for both. Purple cards upgrade your ability.</li>
     <li>Amber cards upgrade your gun. They only appear for the character you picked.</li>
     <li>Every gun has a clip. It reloads when empty, or after you stop firing for a moment. Press R on a keyboard to reload early.</li>
-    <li>Your cone shows other fighters. Bullets are always visible. Pings mark shots fired out of sight.</li>
+    <li>Your sight cone and nearby awareness reveal fighters and combat effects. Walls block your view.</li>
     <li>Damage, kills and green orbs give XP. Each level banks an upgrade pick. You choose your picks at the end of the drop, so the action never stops.</li>
     <li>There is no storm. A huge horde of slow zombies spawns on the red edge of the zone and shambles toward the middle, getting a little faster as time passes. They bite anyone they reach, and the edge keeps closing in, so you can't hide out there.</li>
     <li>First to 3 drop wins takes the match.</li>
-    <li>Your cone shows zombies like anyone else. Red pings mark ones closing in from out of sight.</li>
+    <li>Zombies and their combat effects are visible only within your sight.</li>
     <li>Once you are out, tap the left or right half to switch who you watch.</li>
     <li>Debug mode puts 16 bots in a match with you as a spectator. Tap left or right to switch bot. The speed button sets 1×, 2×, 4× or 8×. The INFO button cycles the AI overlay: state labels and the followed bot's panel, then lines for every bot, then off. On a keyboard use the arrow keys, F for speed and Tab for the overlay.</li>
     <li>On a keyboard: ${K('up')}${K('left')}${K('down')}${K('right')} to move, mouse to aim and fire, ${K('dash')} to dash, ${K('ability')} signature, ${K('skill')} skill, ${K('ult')} ultimate, ${K('pause')} to pause.</li>
